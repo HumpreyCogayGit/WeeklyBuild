@@ -4,7 +4,7 @@
  * Helps verify when the page was last updated
  */
 const Footer = () => {
-    const version = '2.0.0';
+    const version = '1.0.0';
     const buildDate = new Date().toISOString();
     const buildNumber = Date.now().toString().slice(-6);
     
