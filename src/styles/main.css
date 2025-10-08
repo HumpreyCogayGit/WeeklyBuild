@@ -307,13 +307,13 @@ body {
     background-color: #f9f9f9;
     padding: 1.5em;
     margin: 1em 0;
-    border-radius: 5px;
-    border-left: 4px solid #2196F3;
+    border-radius: 0;
+    border-left: 10px solid #6B8E23;
 }
 
 .project-card h3 {
     margin-top: 0;
-    color: #2196F3;
+    color: #6B8E23;
     font-family: 'Arial', sans-serif;
 }
 
@@ -324,16 +324,16 @@ body {
 }
 
 .featured-project {
-    background-color: #fff3e0;
+    background-color: #C5C6C7;
     padding: 1.5em;
     margin: 1em 0;
-    border-radius: 5px;
-    border-left: 4px solid #ff9800;
+    border-radius: 0;
+    border-left: 10px solid #6B8E23;
 }
 
 .featured-project h3 {
     margin-top: 0;
-    color: #ff9800;
+    color: #6B8E23;
     font-family: 'Arial', sans-serif;
 }
 
@@ -344,11 +344,11 @@ body {
 .call-to-action {
     background-color: #e3f2fd;
     padding: 1em;
-    border-radius: 5px;
-    border-left: 4px solid #2196F3;
+    border-radius: 0;
+    border-left: 10px solid #6B8E23;
     font-family: 'Arial', sans-serif;
     font-weight: bold;
-    color: #1565c0;
+    color: #556B2F;
     margin: 2em 0;
 }
 
@@ -360,13 +360,13 @@ body {
 }
 
 .breadcrumb a {
-    color: #2196F3;
+    color: #6B8E23;
     text-decoration: none;
     transition: color 0.2s;
 }
 
 .breadcrumb a:hover {
-    color: #1565c0;
+    color: #556B2F;
     text-decoration: underline;
 }
 
@@ -429,10 +429,10 @@ body {
 }
 
 .project-category-badge {
-    background-color: #e3f2fd;
-    color: #2196F3;
+    background-color: #f0f4e8;
+    color: #6B8E23;
     padding: 4px 12px;
-    border-radius: 12px;
+    border-radius: 0;
     font-size: 12px;
     font-weight: bold;
 }
@@ -452,26 +452,26 @@ body {
 }
 
 .tech-tag {
-    background-color: #e3f2fd;
-    color: #2196F3;
+    background-color: #f0f4e8;
+    color: #6B8E23;
     padding: 6px 14px;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: 500;
 }
 
 .tech-tag-small {
-    background-color: #e3f2fd;
-    color: #2196F3;
+    background-color: #f0f4e8;
+    color: #6B8E23;
     padding: 4px 10px;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: 12px;
     font-weight: 500;
 }
 
 .highlight-box {
     padding: 1.5em;
-    border-radius: 5px;
+    border-radius: 0;
     margin: 1em 0;
 }
 
@@ -503,16 +503,16 @@ body {
 .project-link-button {
     display: inline-block;
     padding: 10px 20px;
-    background-color: #2196F3;
+    background-color: #6B8E23;
     color: white;
     text-decoration: none;
-    border-radius: 5px;
+    border-radius: 0;
     font-weight: bold;
     transition: background-color 0.2s;
 }
 
 .project-link-button:hover {
-    background-color: #1565c0;
+    background-color: #556B2F;
 }
 
 .back-button {
@@ -520,7 +520,7 @@ body {
     background-color: #f5f5f5;
     color: #333333;
     border: 1px solid #cccccc;
-    border-radius: 5px;
+    border-radius: 0;
     font-family: 'Arial', sans-serif;
     font-size: 14px;
     font-weight: bold;
@@ -561,18 +561,19 @@ body {
 .project-mini-card {
     background-color: #ffffff;
     padding: 1.5em;
-    border-radius: 5px;
+    border-radius: 0;
     border: 1px solid #e0e0e0;
+    border-left: 10px solid #e0e0e0;
     transition: all 0.2s;
 }
 
 .project-mini-card:hover {
-    border-color: #2196F3;
+    border-left-color: #6B8E23;
 }
 
 .project-mini-card h4 {
     margin: 0 0 0.5em 0;
-    color: #2196F3;
+    color: #6B8E23;
     font-size: 16px;
 }
 
@@ -585,7 +586,7 @@ body {
 
 .click-hint {
     font-size: 12px;
-    color: #2196F3;
+    color: #6B8E23;
     margin: 0.5em 0 0 0;
     font-weight: bold;
 }
@@ -616,10 +617,10 @@ body {
 .demo-link-button {
     display: inline-block;
     padding: 6px 14px;
-    background-color: #2196F3;
+    background-color: #6B8E23;
     color: white;
     text-decoration: none;
-    border-radius: 5px;
+    border-radius: 0;
     font-size: 13px;
     font-weight: bold;
     transition: background-color 0.2s;
@@ -627,13 +628,13 @@ body {
 }
 
 .demo-link-button:hover {
-    background-color: #1565c0;
+    background-color: #556B2F;
 }
 
 .demo-container {
     margin: 1.5em 0;
     border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
     background: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
