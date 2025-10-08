@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spirograph Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,7 +15,7 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background: #ffffff;
             min-height: 100vh;
             display: flex;
@@ -243,11 +246,11 @@
                 </div>
 
                 <div class="buttons">
-                    <button class="btn-primary" onclick="startAnimation()">▶ Start</button>
-                    <button class="btn-secondary" onclick="stopAnimation()">⏸ Pause</button>
-                    <button class="btn-secondary" onclick="clearCanvas()">🗑 Clear</button>
-                    <button class="btn-primary" onclick="saveImage()">💾 Save</button>
-                    <button class="btn-secondary" onclick="randomize()">🎲 Random</button>
+                    <button class="btn-primary" onclick="startAnimation()">Start</button>
+                    <button class="btn-secondary" onclick="stopAnimation()">Pause</button>
+                    <button class="btn-secondary" onclick="clearCanvas()">Clear</button>
+                    <button class="btn-primary" onclick="saveImage()">Save</button>
+                    <button class="btn-secondary" onclick="randomize()">Random</button>
                 </div>
             </div>
         </div>

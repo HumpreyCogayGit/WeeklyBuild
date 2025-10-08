@@ -88,7 +88,7 @@ const AboutPage = ({ isVisible }) => {
                 <div className="tech-stack">
                     <div className="tech-category">
                         <h3>Data & Analytics</h3>
-                        <p>Python, SQL, Apache Spark, Kafka, Airflow, dbt</p>
+                        <p>Azure Data Factory, Databricks, Python, SQL, Apache Spark</p>
                     </div>
                     <div className="tech-category">
                         <h3>Cloud Platforms</h3>
@@ -96,11 +96,11 @@ const AboutPage = ({ isVisible }) => {
                     </div>
                     <div className="tech-category">
                         <h3>AI & ML</h3>
-                        <p>TensorFlow, PyTorch, Scikit-learn, Hugging Face, OpenAI</p>
+                        <p>Hugging Face, OpenAI, Langchain, Stable Diffusion</p>
                     </div>
                     <div className="tech-category">
                         <h3>Development</h3>
-                        <p>React, Node.js, Docker, Kubernetes, Git, CI/CD</p>
+                        <p>Python, React, Docker, Git, C#, .NET</p>
                     </div>
                 </div>
             </div>
