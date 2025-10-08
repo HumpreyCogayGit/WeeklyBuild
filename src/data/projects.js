@@ -9,8 +9,39 @@ const PROJECTS_DATA = {
             id: 'snippets-algorithms',
             title: 'Snippets & Algorithms',
             description: 'Code snippets, algorithm implementations, and developer utilities.',
-            icon: '📝',
+            icon: '',
             projects: [
+                 {
+                    id: 'spirograph-generator',
+                    slug: 'spirograph-generator',
+                    title: 'Spirograph Generator',
+                    subtitle: 'HTML5 Canvas + JavaScript',
+                    description: 'An interactive spirograph drawing tool that creates beautiful mathematical patterns using hypotrochoid and epitrochoid curves.',
+                    status: 'completed',
+                    date: '2025-10-08',
+                    technologies: ['HTML5', 'CSS3', 'JavaScript', 'Canvas API'],
+                    overview: 'A fully interactive spirograph generator built with vanilla JavaScript and HTML5 Canvas. Users can adjust parameters in real-time to create unique mathematical art.',
+                    problem: 'How can we make mathematical curves accessible and fun to explore for everyone?',
+                    solution: 'Created an intuitive web-based tool with real-time parameter controls, animation, and the ability to save creations.',
+                    challenges: [
+                        'Implementing smooth animation with requestAnimationFrame',
+                        'Calculating hypotrochoid and epitrochoid curves accurately',
+                        'Creating an intuitive UI for mathematical parameters'
+                    ],
+                    learnings: [
+                        'HTML5 Canvas drawing techniques',
+                        'Mathematical curve generation algorithms',
+                        'Real-time parameter manipulation and rendering'
+                    ],
+                    futureImprovements: [
+                        'Add color gradients and multi-color patterns',
+                        'Implement pattern presets gallery',
+                        'Add export to SVG format'
+                    ],
+                    github: '',
+                    demo: './src/projects/spirograph.html',
+                    featured: true
+                },
                 {
                     id: 'python-design-patterns',
                     slug: 'python-design-patterns',
@@ -72,38 +103,8 @@ const PROJECTS_DATA = {
                     github: '',
                     demo: '',
                     featured: false
-                },
-                {
-                    id: 'spirograph-generator',
-                    slug: 'spirograph-generator',
-                    title: 'Spirograph Generator',
-                    subtitle: 'HTML5 Canvas + JavaScript',
-                    description: 'An interactive spirograph drawing tool that creates beautiful mathematical patterns using hypotrochoid and epitrochoid curves.',
-                    status: 'completed',
-                    date: '2025-10-08',
-                    technologies: ['HTML5', 'CSS3', 'JavaScript', 'Canvas API'],
-                    overview: 'A fully interactive spirograph generator built with vanilla JavaScript and HTML5 Canvas. Users can adjust parameters in real-time to create unique mathematical art.',
-                    problem: 'How can we make mathematical curves accessible and fun to explore for everyone?',
-                    solution: 'Created an intuitive web-based tool with real-time parameter controls, animation, and the ability to save creations.',
-                    challenges: [
-                        'Implementing smooth animation with requestAnimationFrame',
-                        'Calculating hypotrochoid and epitrochoid curves accurately',
-                        'Creating an intuitive UI for mathematical parameters'
-                    ],
-                    learnings: [
-                        'HTML5 Canvas drawing techniques',
-                        'Mathematical curve generation algorithms',
-                        'Real-time parameter manipulation and rendering'
-                    ],
-                    futureImprovements: [
-                        'Add color gradients and multi-color patterns',
-                        'Implement pattern presets gallery',
-                        'Add export to SVG format'
-                    ],
-                    github: '',
-                    demo: './src/projects/spirograph.html',
-                    featured: true
                 }
+               
                 // Add more snippets/algorithm projects here
             ]
         },
@@ -111,7 +112,7 @@ const PROJECTS_DATA = {
             id: 'ai-ml',
             title: 'AI & Machine Learning',
             description: 'Exploring the latest in artificial intelligence and practical ML applications.',
-            icon: '🤖',
+            icon: '',
             projects: [
                 {
                     id: 'sentiment-analysis-api',
@@ -151,7 +152,7 @@ const PROJECTS_DATA = {
             id: 'data-engineering',
             title: 'Data Engineering',
             description: 'Building scalable data pipelines, ETL processes, and data infrastructure solutions.',
-            icon: '🔧',
+            icon: '',
             projects: [
                 {
                     id: 'serverless-etl-pipeline',
