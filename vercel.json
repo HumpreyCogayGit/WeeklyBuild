@@ -3,7 +3,7 @@
   "outputDirectory": ".",
   "headers": [
     {
-      "source": "/src/**/*.jsx",
+      "source": "/src/(.*)\\.jsx",
       "headers": [
         {
           "key": "Content-Type",
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "source": "/src/**/*.js",
+      "source": "/src/(.*)\\.js",
       "headers": [
         {
           "key": "Content-Type",
@@ -25,7 +25,7 @@
       ]
     },
     {
-      "source": "/src/**/*.css",
+      "source": "/src/(.*)\\.css",
       "headers": [
         {
           "key": "Content-Type",
