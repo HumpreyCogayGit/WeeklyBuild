@@ -28,11 +28,28 @@ const App = () => {
 
     // Render the appropriate page component
     const renderPage = () => {
+        // Handle project detail pages (format: project:categoryId:projectSlug)
+        if (currentPage.startsWith('project:')) {
+            const parts = currentPage.split(':');
+            if (parts.length === 3) {
+                const [, categoryId, projectSlug] = parts;
+                return (
+                    <ProjectDetailPage 
+                        isVisible={contentVisible}
+                        categoryId={categoryId}
+                        projectSlug={projectSlug}
+                        onNavigate={handleNavigate}
+                    />
+                );
+            }
+        }
+
+        // Handle regular pages
         switch(currentPage) {
             case 'home':
                 return <HomePage isVisible={contentVisible} />;
             case 'projects':
-                return <ProjectsPage isVisible={contentVisible} />;
+                return <ProjectsPage isVisible={contentVisible} onNavigate={handleNavigate} />;
             case 'about':
                 return <AboutPage isVisible={contentVisible} />;
             default:

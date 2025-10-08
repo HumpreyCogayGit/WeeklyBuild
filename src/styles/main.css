@@ -340,3 +340,251 @@ body {
     color: #1565c0;
     margin: 2em 0;
 }
+
+/* Project Detail Page Styles */
+.breadcrumb {
+    margin: 0 0 1.5em 0;
+    font-size: 14px;
+    color: #666666;
+}
+
+.breadcrumb a {
+    color: #2196F3;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+    color: #1565c0;
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    margin: 0 0.5em;
+    color: #cccccc;
+}
+
+.breadcrumb-current {
+    color: #333333;
+}
+
+.project-detail-header {
+    margin: 1.5em 0;
+    padding-bottom: 1em;
+    border-bottom: 2px solid #f5f5f5;
+}
+
+.project-subtitle {
+    font-size: 18px;
+    color: #666666;
+    font-style: italic;
+    margin: 0.5em 0;
+}
+
+.project-meta {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+    margin-top: 1em;
+}
+
+.project-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-in-progress {
+    background-color: #ff9800;
+    color: white;
+}
+
+.status-planned {
+    background-color: #9e9e9e;
+    color: white;
+}
+
+.project-date {
+    color: #999999;
+    font-size: 14px;
+}
+
+.project-category-badge {
+    background-color: #e3f2fd;
+    color: #2196F3;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.project-description {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #555555;
+    margin: 1em 0;
+}
+
+.tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin: 1em 0;
+}
+
+.tech-tag {
+    background-color: #e3f2fd;
+    color: #2196F3;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tech-tag-small {
+    background-color: #e3f2fd;
+    color: #2196F3;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.highlight-box {
+    padding: 1.5em;
+    border-radius: 5px;
+    margin: 1em 0;
+}
+
+.problem-box {
+    background-color: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.solution-box {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4CAF50;
+}
+
+.project-list {
+    line-height: 2;
+    margin: 1em 0;
+}
+
+.project-list li {
+    margin: 0.5em 0;
+}
+
+.project-links {
+    display: flex;
+    gap: 1em;
+    margin: 1em 0;
+}
+
+.project-link-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #2196F3;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.project-link-button:hover {
+    background-color: #1565c0;
+}
+
+.back-button {
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+    color: #333333;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-button:hover {
+    background-color: #e0e0e0;
+    border-color: #999999;
+}
+
+/* Clickable Project Cards */
+.clickable-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5em;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1em;
+    margin: 1.5em 0;
+}
+
+.project-mini-card {
+    background-color: #ffffff;
+    padding: 1.5em;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s;
+}
+
+.project-mini-card:hover {
+    border-color: #2196F3;
+}
+
+.project-mini-card h4 {
+    margin: 0 0 0.5em 0;
+    color: #2196F3;
+    font-size: 16px;
+}
+
+.project-mini-description {
+    font-size: 14px;
+    color: #666666;
+    margin: 0.5em 0;
+    line-height: 1.5;
+}
+
+.click-hint {
+    font-size: 12px;
+    color: #2196F3;
+    margin: 0.5em 0 0 0;
+    font-weight: bold;
+}
+
+.no-projects {
+    font-style: italic;
+    color: #999999;
+    margin: 1em 0;
+}
+
+.category-section {
+    margin: 2em 0;
+}

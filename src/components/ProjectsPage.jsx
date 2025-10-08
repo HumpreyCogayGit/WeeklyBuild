@@ -1,89 +1,102 @@
 /**
  * ProjectsPage Component
- * Displays portfolio of projects and weekly builds
+ * Displays portfolio of projects organized by categories
  * @param {boolean} isVisible - Controls the visibility/opacity of the page
+ * @param {function} onNavigate - Navigation callback function
  */
-const ProjectsPage = ({ isVisible }) => {
+const ProjectsPage = ({ isVisible, onNavigate }) => {
+    const categories = window.PROJECTS_DATA?.categories || {};
+    const featuredProjects = window.ProjectsAPI?.getFeaturedProjects() || [];
+
+    const handleProjectClick = (categoryId, projectSlug) => {
+        onNavigate(`project:${categoryId}:${projectSlug}`);
+    };
+
+    const getStatusBadge = (status) => {
+        const statusMap = {
+            'completed': { text: 'Completed', class: 'status-completed' },
+            'in-progress': { text: 'In Progress', class: 'status-in-progress' },
+            'planned': { text: 'Planned', class: 'status-planned' }
+        };
+        const statusInfo = statusMap[status] || statusMap['planned'];
+        return <span className={`project-status ${statusInfo.class}`}>{statusInfo.text}</span>;
+    };
+
     return (
         <div id="content-area" className={isVisible ? 'loaded' : ''}>
             <h1>Projects</h1>
             
             <p>Welcome to my project showcase! This is where I document my weekly builds, experiments, and technical explorations. Each project represents a learning journey and a step forward in my continuous growth.</p>
 
-            <div className="project-section">
-                <h2>Current Focus</h2>
-                <p>Right now, I'm exploring and building projects around:</p>
-                <ul>
-                    <li>Modern data pipeline architectures with cloud-native technologies</li>
-                    <li>AI/ML model deployment and productionization</li>
-                    <li>Real-time data processing and streaming analytics</li>
-                    <li>Developer tools and automation frameworks</li>
-                </ul>
-            </div>
+            {/* Featured Projects */}
+            {featuredProjects.length > 0 && (
+                <div className="project-section">
+                    <h2>Featured Projects</h2>
+                    {featuredProjects.map(project => (
+                        <div 
+                            key={project.id} 
+                            className="featured-project clickable-card"
+                            onClick={() => handleProjectClick(project.category, project.slug)}
+                        >
+                            <div className="project-card-header">
+                                <h3>{project.title}</h3>
+                                {getStatusBadge(project.status)}
+                            </div>
+                            {project.subtitle && <p className="project-subtitle">{project.subtitle}</p>}
+                            <p>{project.description}</p>
+                            <div className="tech-tags">
+                                {project.technologies.slice(0, 5).map((tech, i) => (
+                                    <span key={i} className="tech-tag-small">{tech}</span>
+                                ))}
+                            </div>
+                            <p className="click-hint">Click to read more →</p>
+                        </div>
+                    ))}
+                </div>
+            )}
 
+            {/* Project Categories */}
             <div className="project-section">
                 <h2>Project Categories</h2>
+                <p>Explore my projects organized by category. Click on any project to see the full details.</p>
                 
-                <div className="project-card">
-                    <h3>Data Engineering Projects</h3>
-                    <p>Building scalable data pipelines, ETL processes, and data infrastructure solutions.</p>
-                    <ul>
-                        <li>Serverless data processing architectures</li>
-                        <li>Real-time streaming pipelines with Kafka/Kinesis</li>
-                        <li>Data warehouse optimization and modeling</li>
-                        <li>Automated data quality frameworks</li>
-                    </ul>
-                </div>
-
-                <div className="project-card">
-                    <h3>AI & Machine Learning</h3>
-                    <p>Exploring the latest in artificial intelligence and practical ML applications.</p>
-                    <ul>
-                        <li>LLM integration and prompt engineering experiments</li>
-                        <li>ML model training and optimization</li>
-                        <li>AI-powered automation tools</li>
-                        <li>Computer vision and NLP projects</li>
-                    </ul>
-                </div>
-
-                <div className="project-card">
-                    <h3>Cloud & DevOps</h3>
-                    <p>Infrastructure as code, containerization, and cloud-native solutions.</p>
-                    <ul>
-                        <li>Kubernetes deployments and orchestration</li>
-                        <li>CI/CD pipeline implementations</li>
-                        <li>Infrastructure automation with Terraform</li>
-                        <li>Monitoring and observability solutions</li>
-                    </ul>
-                </div>
-
-                <div className="project-card">
-                    <h3>Web Development</h3>
-                    <p>Full-stack applications and modern web technologies.</p>
-                    <ul>
-                        <li>React-based applications (like this site!)</li>
-                        <li>API development and microservices</li>
-                        <li>Progressive web applications</li>
-                        <li>Developer tools and utilities</li>
-                    </ul>
-                </div>
+                {Object.values(categories).map(category => (
+                    <div key={category.id} className="category-section">
+                        <div className="project-card">
+                            <h3>{category.title}</h3>
+                            <p>{category.description}</p>
+                            
+                            {category.projects && category.projects.length > 0 ? (
+                                <div className="projects-grid">
+                                    {category.projects.map(project => (
+                                        <div 
+                                            key={project.id}
+                                            className="project-mini-card clickable-card"
+                                            onClick={() => handleProjectClick(category.id, project.slug)}
+                                        >
+                                            <div className="project-card-header">
+                                                <h4>{project.title}</h4>
+                                                {getStatusBadge(project.status)}
+                                            </div>
+                                            <p className="project-mini-description">{project.description}</p>
+                                            <div className="tech-tags">
+                                                {project.technologies.slice(0, 3).map((tech, i) => (
+                                                    <span key={i} className="tech-tag-small">{tech}</span>
+                                                ))}
+                                            </div>
+                                            <p className="click-hint">Read more →</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="no-projects">Projects coming soon...</p>
+                            )}
+                        </div>
+                    </div>
+                ))}
             </div>
 
-            <div className="project-section">
-                <h2>Featured Projects</h2>
-                
-                <div className="featured-project">
-                    <h3>WeeklyBuild Website</h3>
-                    <p><strong>Status:</strong> Live</p>
-                    <p>
-                        A React-based personal website with animated ASCII art, built following enterprise-level 
-                        design patterns. Features include component-based architecture, custom React hooks, 
-                        and Vercel deployment.
-                    </p>
-                    <p><strong>Technologies:</strong> React 18, JavaScript, CSS, Vercel</p>
-                </div>
-            </div>
-
+            {/* Project Philosophy */}
             <div className="project-section">
                 <h2>Project Philosophy</h2>
                 <p>
