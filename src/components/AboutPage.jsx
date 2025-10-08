@@ -9,7 +9,7 @@ const AboutPage = ({ isVisible }) => {
             <h1>About Me</h1>
             
             <div className="about-section">
-                <h2>👋 Hi, I'm Humprey!</h2>
+                <h2>Hi, I'm Humprey!</h2>
                 <p>
                     I'm a passionate <strong>Data Engineer</strong> with a deep love for technology, innovation, 
                     and continuous learning. My journey in tech has been driven by curiosity and the belief that 
@@ -18,21 +18,21 @@ const AboutPage = ({ isVisible }) => {
             </div>
 
             <div className="about-section">
-                <h2>💼 What I Do</h2>
+                <h2>What I Do</h2>
                 <p>
                     As a Data Engineer, I work at the intersection of data, cloud technologies, and AI. 
                     I specialize in:
                 </p>
                 <ul>
                     <li><strong>Data Pipeline Architecture:</strong> Building scalable, efficient data processing systems</li>
-                    <li><strong>Cloud Technologies:</strong> Leveraging AWS, Azure, and GCP for modern data solutions</li>
+                    <li><strong>Cloud Technologies:</strong> Leveraging AWS and Azure for modern data solutions</li>
                     <li><strong>AI & Machine Learning:</strong> Exploring the latest in artificial intelligence and its practical applications</li>
                     <li><strong>Data Infrastructure:</strong> Designing robust systems that power data-driven decision making</li>
                 </ul>
             </div>
 
             <div className="about-section">
-                <h2>🚀 The Weekly Build Philosophy</h2>
+                <h2>The Weekly Build Philosophy</h2>
                 <p>
                     <strong>Weekly Build</strong> isn't just a blog—it's a commitment to continuous growth and learning. 
                     Every week, I challenge myself to learn something new, build something interesting, or explore 
@@ -50,7 +50,7 @@ const AboutPage = ({ isVisible }) => {
             </div>
 
             <div className="about-section">
-                <h2>🎯 My Mission</h2>
+                <h2>My Mission</h2>
                 <p>
                     My goal with Weekly Build is twofold:
                 </p>
@@ -65,7 +65,7 @@ const AboutPage = ({ isVisible }) => {
             </div>
 
             <div className="about-section">
-                <h2>💡 What Drives Me</h2>
+                <h2>What Drives Me</h2>
                 <p>
                     I believe that technology should be accessible, and learning should be a shared experience. 
                     The tech community has given me so much, and Weekly Build is my way of giving back. 
@@ -75,16 +75,16 @@ const AboutPage = ({ isVisible }) => {
                     I'm particularly passionate about:
                 </p>
                 <ul>
-                    <li>🤖 The democratization of AI and machine learning</li>
-                    <li>☁️ Cloud-native architectures and modern data platforms</li>
-                    <li>📊 Making data more accessible and actionable</li>
-                    <li>🌱 Sustainable and ethical technology practices</li>
-                    <li>🎓 Mentoring and knowledge sharing in the tech community</li>
+                    <li>The democratization of AI and machine learning</li>
+                    <li>Cloud-native architectures and modern data platforms</li>
+                    <li>Making data more accessible and actionable</li>
+                    <li>Sustainable and ethical technology practices</li>
+                    <li>Mentoring and knowledge sharing in the tech community</li>
                 </ul>
             </div>
 
             <div className="about-section">
-                <h2>🛠️ Technologies I Work With</h2>
+                <h2>Technologies I Work With</h2>
                 <div className="tech-stack">
                     <div className="tech-category">
                         <h3>Data & Analytics</h3>
@@ -92,7 +92,7 @@ const AboutPage = ({ isVisible }) => {
                     </div>
                     <div className="tech-category">
                         <h3>Cloud Platforms</h3>
-                        <p>AWS (Redshift, S3, Lambda, Glue), Azure, GCP</p>
+                        <p>AWS, Azure</p>
                     </div>
                     <div className="tech-category">
                         <h3>AI & ML</h3>
@@ -106,7 +106,7 @@ const AboutPage = ({ isVisible }) => {
             </div>
 
             <div className="about-section">
-                <h2>📫 Let's Connect</h2>
+                <h2>Let's Connect</h2>
                 <p>
                     I'm always excited to connect with fellow tech enthusiasts, data engineers, and lifelong learners. 
                     Whether you have questions about a project, want to collaborate, or just want to chat about tech:
@@ -117,7 +117,7 @@ const AboutPage = ({ isVisible }) => {
                     <li><strong>Email:</strong> Drop me a message anytime</li>
                 </ul>
                 <p>
-                    Thanks for stopping by! Let's build, learn, and grow together—one week at a time! 🚀
+                    Thanks for stopping by! Let's build, learn, and grow together—one week at a time!
                 </p>
             </div>
         </div>
