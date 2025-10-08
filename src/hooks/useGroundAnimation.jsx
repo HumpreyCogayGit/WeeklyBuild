@@ -6,13 +6,27 @@
  * @param {Function} onComplete - Callback function when animation completes
  */
 const useGroundAnimation = (groundRef, containerRef, onComplete) => {
+    const hasAnimatedRef = React.useRef(false);
+    const onCompleteRef = React.useRef(onComplete);
+
+    // Update callback ref without triggering re-run
+    React.useEffect(() => {
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
+
     React.useEffect(() => {
         const groundEl = groundRef.current;
         const container = containerRef.current;
 
-        if (!groundEl || !container) return;
+        if (!groundEl || !container || hasAnimatedRef.current) return;
+
+        // Mark as animated to prevent re-runs
+        hasAnimatedRef.current = true;
 
         const animateGround = () => {
+            // Clear any existing content
+            groundEl.innerHTML = '';
+
             const containerWidth = container.offsetWidth;
             const charSpacing = 8;
             const numChars = Math.floor(containerWidth / charSpacing);
@@ -39,19 +53,20 @@ const useGroundAnimation = (groundRef, containerRef, onComplete) => {
             // After ground animation completes, trigger callback
             const totalAnimTime = numChars * 15 + 300;
             setTimeout(() => {
-                if (onComplete) onComplete();
+                if (onCompleteRef.current) {
+                    onCompleteRef.current();
+                }
             }, totalAnimTime);
         };
 
         animateGround();
 
-        // Cleanup function
+        // Cleanup function - but don't clear the hasAnimated flag
         return () => {
-            if (groundEl) {
-                groundEl.innerHTML = '';
-            }
+            // Don't clear groundEl to preserve the animation
+            // The hasAnimatedRef ensures it only runs once
         };
-    }, [groundRef, containerRef, onComplete]);
+    }, [groundRef, containerRef]); // Removed onComplete from dependencies
 };
 
 // Export for use in components

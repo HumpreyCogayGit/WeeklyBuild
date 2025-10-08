@@ -5,11 +5,16 @@
  * @param {React.RefObject} containerRef - Reference to the container element
  */
 const useRabbitAnimation = (rabbitRef, containerRef) => {
+    const intervalIdRef = React.useRef(null);
+
     React.useEffect(() => {
         const rabbitEl = rabbitRef.current;
         const container = containerRef.current;
 
         if (!rabbitEl || !container) return;
+
+        // Don't start a new animation if one is already running
+        if (intervalIdRef.current) return;
 
         // Rabbit animation frames
         const rabbit1 = `   (\\___/)
@@ -102,11 +107,14 @@ const useRabbitAnimation = (rabbitRef, containerRef) => {
         };
 
         // Start animation interval
-        const intervalId = setInterval(animate, 150);
+        intervalIdRef.current = setInterval(animate, 150);
 
         // Cleanup function
         return () => {
-            clearInterval(intervalId);
+            if (intervalIdRef.current) {
+                clearInterval(intervalIdRef.current);
+                intervalIdRef.current = null;
+            }
         };
     }, [rabbitRef, containerRef]);
 };
