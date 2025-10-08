@@ -38,6 +38,9 @@ coverage/
 temp/
 *.tmp
 
+# Vercel
+.vercel
+
 #docs
 ARCHITECTURE.md
 DEVELOPMENT.md
