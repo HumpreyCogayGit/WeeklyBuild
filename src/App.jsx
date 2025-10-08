@@ -27,6 +27,7 @@ const App = () => {
                 <NavPane isVisible={contentVisible} />
                 <ContentArea isVisible={contentVisible} />
             </div>
+            <Footer />
         </>
     );
 };

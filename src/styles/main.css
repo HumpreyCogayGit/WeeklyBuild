@@ -166,3 +166,56 @@ body {
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
 }
+
+/* Footer Styles */
+#app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #2c2c2c;
+    color: #ffffff;
+    padding: 8px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    border-top: 1px solid #444444;
+    z-index: 1000;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.footer-left,
+.footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-version {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.footer-build {
+    color: #ffa726;
+}
+
+.footer-separator {
+    color: #666666;
+}
+
+.footer-timestamp {
+    color: #aaaaaa;
+    font-size: 11px;
+}
+
+/* Adjust content area to account for footer */
+#content-area {
+    padding-bottom: 50px;
+}

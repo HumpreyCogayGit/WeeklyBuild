@@ -12,6 +12,7 @@ function initApp() {
         'Header',
         'NavPane',
         'ContentArea',
+        'Footer',
         'App'
     ];
 
