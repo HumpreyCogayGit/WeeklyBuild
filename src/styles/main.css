@@ -641,9 +641,17 @@ body {
 
 .project-demo-iframe {
     width: 100%;
-    height: 800px;
+    height: 600px;
     border: none;
     display: block;
+    transform: scale(0.75);
+    transform-origin: top left;
+    width: 133.33%;
+}
+
+.demo-container {
+    overflow: hidden;
+    max-height: 450px;
 }
 
 @media (max-width: 768px) {
