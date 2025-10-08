@@ -5,87 +5,7 @@
 
 const PROJECTS_DATA = {
     categories: {
-        'data-engineering': {
-            id: 'data-engineering',
-            title: 'Data Engineering',
-            description: 'Building scalable data pipelines, ETL processes, and data infrastructure solutions.',
-            icon: '🔧',
-            projects: [
-                {
-                    id: 'serverless-etl-pipeline',
-                    slug: 'serverless-etl-pipeline',
-                    title: 'Serverless ETL Pipeline',
-                    subtitle: 'Azure Functions + Data Lake + Data Factory',
-                    description: 'A fully serverless ETL pipeline for processing large-scale data using Azure services.',
-                    status: 'planned',
-                    date: '2025-10-01',
-                    technologies: ['Azure Functions', 'Azure Data Lake', 'Azure Data Factory', 'Python', 'Azure SDK'],
-                    overview: 'Built a serverless ETL pipeline that processes millions of records daily without managing infrastructure.',
-                    problem: 'Need to process large volumes of data efficiently without maintaining servers.',
-                    solution: 'Implemented event-driven architecture using Azure Functions triggers, Data Lake for storage, and Data Factory for orchestration.',
-                    challenges: [
-                        'Managing Azure Functions timeout limits for large files',
-                        'Optimizing Data Lake read/write operations',
-                        'Implementing proper error handling and retry logic'
-                    ],
-                    learnings: [
-                        'Understanding serverless architecture patterns on Azure',
-                        'Azure Data Lake event notification best practices',
-                        'Cost optimization strategies for Azure Functions executions'
-                    ],
-                    futureImprovements: [
-                        'Add real-time monitoring dashboard with Azure Monitor',
-                        'Implement data quality checks with Azure Purview',
-                        'Add support for streaming data with Azure Event Hubs'
-                    ],
-                    github: '',
-                    demo: '',
-                    featured: false
-                }
-                // Add more data engineering projects here
-            ]
-        },
-        'ai-ml': {
-            id: 'ai-ml',
-            title: 'AI & Machine Learning',
-            description: 'Exploring the latest in artificial intelligence and practical ML applications.',
-            icon: '🤖',
-            projects: [
-                {
-                    id: 'sentiment-analysis-api',
-                    slug: 'sentiment-analysis-api',
-                    title: 'Sentiment Analysis API',
-                    subtitle: 'NLP + FastAPI + Docker',
-                    description: 'A RESTful API for sentiment analysis using transformer models.',
-                    status: 'planned',
-                    date: '2025-10-05',
-                    technologies: ['Python', 'FastAPI', 'Transformers', 'Docker', 'Hugging Face'],
-                    overview: 'Building a production-ready sentiment analysis API using state-of-the-art NLP models.',
-                    problem: 'Need a scalable API to analyze sentiment from user-generated content in real-time.',
-                    solution: 'Used pre-trained BERT models with FastAPI for high-performance inference, containerized with Docker.',
-                    challenges: [
-                        'Model optimization for faster inference',
-                        'Handling large batch requests efficiently',
-                        'Managing model versions and updates'
-                    ],
-                    learnings: [
-                        'Fine-tuning transformer models',
-                        'FastAPI best practices for ML APIs',
-                        'Docker optimization for ML workloads'
-                    ],
-                    futureImprovements: [
-                        'Add multi-language support',
-                        'Implement model caching',
-                        'Add A/B testing framework'
-                    ],
-                    github: '',
-                    demo: '',
-                    featured: false
-                }
-                // Add more AI/ML projects here
-            ]
-        },
-        'snippets-algorithms': {
+         'snippets-algorithms': {
             id: 'snippets-algorithms',
             title: 'Snippets & Algorithms',
             description: 'Code snippets, algorithm implementations, and developer utilities.',
@@ -152,8 +72,119 @@ const PROJECTS_DATA = {
                     github: '',
                     demo: '',
                     featured: false
+                },
+                {
+                    id: 'spirograph-generator',
+                    slug: 'spirograph-generator',
+                    title: 'Spirograph Generator',
+                    subtitle: 'HTML5 Canvas + JavaScript',
+                    description: 'An interactive spirograph drawing tool that creates beautiful mathematical patterns using hypotrochoid and epitrochoid curves.',
+                    status: 'completed',
+                    date: '2025-10-08',
+                    technologies: ['HTML5', 'CSS3', 'JavaScript', 'Canvas API'],
+                    overview: 'A fully interactive spirograph generator built with vanilla JavaScript and HTML5 Canvas. Users can adjust parameters in real-time to create unique mathematical art.',
+                    problem: 'How can we make mathematical curves accessible and fun to explore for everyone?',
+                    solution: 'Created an intuitive web-based tool with real-time parameter controls, animation, and the ability to save creations.',
+                    challenges: [
+                        'Implementing smooth animation with requestAnimationFrame',
+                        'Calculating hypotrochoid and epitrochoid curves accurately',
+                        'Creating an intuitive UI for mathematical parameters'
+                    ],
+                    learnings: [
+                        'HTML5 Canvas drawing techniques',
+                        'Mathematical curve generation algorithms',
+                        'Real-time parameter manipulation and rendering'
+                    ],
+                    futureImprovements: [
+                        'Add color gradients and multi-color patterns',
+                        'Implement pattern presets gallery',
+                        'Add export to SVG format'
+                    ],
+                    github: '',
+                    demo: './src/projects/spirograph.html',
+                    featured: true
                 }
                 // Add more snippets/algorithm projects here
+            ]
+        },
+        'ai-ml': {
+            id: 'ai-ml',
+            title: 'AI & Machine Learning',
+            description: 'Exploring the latest in artificial intelligence and practical ML applications.',
+            icon: '🤖',
+            projects: [
+                {
+                    id: 'sentiment-analysis-api',
+                    slug: 'sentiment-analysis-api',
+                    title: 'Sentiment Analysis API',
+                    subtitle: 'Azure Cognitive Services + Azure Functions + Container Apps',
+                    description: 'A RESTful API for sentiment analysis using Azure AI and transformer models.',
+                    status: 'planned',
+                    date: '2025-10-05',
+                    technologies: ['Python', 'Azure Cognitive Services', 'Azure Functions', 'Azure Container Apps', 'Transformers'],
+                    overview: 'Building a production-ready sentiment analysis API using Azure AI services and state-of-the-art NLP models.',
+                    problem: 'Need a scalable API to analyze sentiment from user-generated content in real-time.',
+                    solution: 'Leveraged Azure Cognitive Services for sentiment analysis with custom transformer models deployed on Azure Container Apps for high-performance inference.',
+                    challenges: [
+                        'Model optimization for faster inference on Azure',
+                        'Handling large batch requests efficiently with Azure Functions',
+                        'Managing model versions and updates in Azure Container Registry'
+                    ],
+                    learnings: [
+                        'Fine-tuning transformer models for Azure deployment',
+                        'Azure Functions best practices for ML APIs',
+                        'Azure Container Apps optimization for ML workloads'
+                    ],
+                    futureImprovements: [
+                        'Add multi-language support with Azure Translator',
+                        'Implement model caching with Azure Redis Cache',
+                        'Add A/B testing framework with Azure App Configuration'
+                    ],
+                    github: '',
+                    demo: '',
+                    featured: false
+                }
+                // Add more AI/ML projects here
+            ]
+        },
+        'data-engineering': {
+            id: 'data-engineering',
+            title: 'Data Engineering',
+            description: 'Building scalable data pipelines, ETL processes, and data infrastructure solutions.',
+            icon: '🔧',
+            projects: [
+                {
+                    id: 'serverless-etl-pipeline',
+                    slug: 'serverless-etl-pipeline',
+                    title: 'Serverless ETL Pipeline',
+                    subtitle: 'Azure Functions + Data Lake + Data Factory',
+                    description: 'A fully serverless ETL pipeline for processing large-scale data using Azure services.',
+                    status: 'planned',
+                    date: '2025-10-01',
+                    technologies: ['Azure Functions', 'Azure Data Lake', 'Azure Data Factory', 'Python', 'Azure SDK'],
+                    overview: 'Built a serverless ETL pipeline that processes millions of records daily without managing infrastructure.',
+                    problem: 'Need to process large volumes of data efficiently without maintaining servers.',
+                    solution: 'Implemented event-driven architecture using Azure Functions triggers, Data Lake for storage, and Data Factory for orchestration.',
+                    challenges: [
+                        'Managing Azure Functions timeout limits for large files',
+                        'Optimizing Data Lake read/write operations',
+                        'Implementing proper error handling and retry logic'
+                    ],
+                    learnings: [
+                        'Understanding serverless architecture patterns on Azure',
+                        'Azure Data Lake event notification best practices',
+                        'Cost optimization strategies for Azure Functions executions'
+                    ],
+                    futureImprovements: [
+                        'Add real-time monitoring dashboard with Azure Monitor',
+                        'Implement data quality checks with Azure Purview',
+                        'Add support for streaming data with Azure Event Hubs'
+                    ],
+                    github: '',
+                    demo: '',
+                    featured: false
+                }
+                // Add more data engineering projects here
             ]
         }
     }

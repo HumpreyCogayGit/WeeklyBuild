@@ -69,6 +69,25 @@ const ProjectDetailPage = ({ isVisible, categoryId, projectSlug, onNavigate }) =
                 </div>
             </div>
 
+            {/* Embedded Demo - Show if demo exists and is internal */}
+            {project.demo && project.demo.startsWith('./') && (
+                <div className="project-section">
+                    <div className="demo-header">
+                        <h2>Interactive Demo</h2>
+                        <a href={project.demo} target="_blank" rel="noopener noreferrer" className="demo-link-button">
+                            Open Full Screen →
+                        </a>
+                    </div>
+                    <div className="demo-container">
+                        <iframe 
+                            src={project.demo} 
+                            title={`${project.title} Demo`}
+                            className="project-demo-iframe"
+                        />
+                    </div>
+                </div>
+            )}
+
             {/* Project Description */}
             <div className="project-section">
                 <p className="project-description">{project.description}</p>
