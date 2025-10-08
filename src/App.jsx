@@ -50,6 +50,8 @@ const App = () => {
                 return <HomePage isVisible={contentVisible} />;
             case 'projects':
                 return <ProjectsPage isVisible={contentVisible} onNavigate={handleNavigate} />;
+            case 'blog':
+                return <BlogPage isVisible={contentVisible} />;
             case 'about':
                 return <AboutPage isVisible={contentVisible} />;
             default:
@@ -60,13 +62,15 @@ const App = () => {
     return (
         <>
             <Header onAnimationComplete={handleAnimationComplete} />
+            <NavPane 
+                isVisible={contentVisible} 
+                currentPage={currentPage}
+                onNavigate={handleNavigate}
+            />
             <div id="main-content">
-                <NavPane 
-                    isVisible={contentVisible} 
-                    currentPage={currentPage}
-                    onNavigate={handleNavigate}
-                />
-                {renderPage()}
+                <div className="content-wrapper">
+                    {renderPage()}
+                </div>
             </div>
             <Footer />
         </>

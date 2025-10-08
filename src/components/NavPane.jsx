@@ -18,6 +18,7 @@ const NavPane = ({ isVisible, currentPage, onNavigate }) => {
     const menuItems = [
         { id: 'home', label: 'Home', href: '#home' },
         { id: 'projects', label: 'Projects', href: '#projects' },
+        { id: 'blog', label: 'Blog', href: '#blog' },
         { id: 'about', label: 'About', href: '#about' }
     ];
 
@@ -30,7 +31,8 @@ const NavPane = ({ isVisible, currentPage, onNavigate }) => {
                             href={item.href} 
                             onClick={(e) => handleNavClick(item.id, e)}
                             style={{ 
-                                backgroundColor: currentPage === item.id ? '#e0e0e0' : 'transparent' 
+                                color: currentPage === item.id ? '#6B8E23' : '#333333',
+                                backgroundColor: 'transparent'
                             }}
                         >
                             {item.label}

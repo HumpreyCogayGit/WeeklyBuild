@@ -27,7 +27,9 @@ const useGroundAnimation = (groundRef, containerRef, onComplete) => {
             // Clear any existing content
             groundEl.innerHTML = '';
 
-            const containerWidth = container.offsetWidth;
+            // Use the header-content width (800px max-width) instead of full container
+            const headerContent = container.querySelector('.header-content');
+            const containerWidth = headerContent ? headerContent.offsetWidth : 800;
             const charSpacing = 8;
             const numChars = Math.floor(containerWidth / charSpacing);
             const groundChars = ['_', '-', '=', '.', '_', '-'];

@@ -5,7 +5,7 @@
  */
 const HomePage = ({ isVisible }) => {
     return (
-        <div id="content-area" className={isVisible ? 'loaded' : ''}>
+        <div className={`page-content ${isVisible ? 'loaded' : ''}`}>
             <h1>Welcome to Weekly Build</h1>
             <p>Hi there! I'm <strong>Humprey</strong>, a passionate <strong>Data Engineer</strong> with a love for all things technology—especially the latest in <strong>AI</strong> and <strong>cloud technologies</strong>. Over the years, I've found that the best way to grow is to continuously challenge yourself and explore new frontiers.</p>
             

@@ -13,6 +13,7 @@ function initApp() {
         'NavPane',
         'HomePage',
         'ProjectsPage',
+        'BlogPage',
         'AboutPage',
         'Footer',
         'App'

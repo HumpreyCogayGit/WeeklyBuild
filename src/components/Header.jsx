@@ -19,9 +19,11 @@ const Header = ({ onAnimationComplete }) => {
 
     return (
         <div id="container" ref={containerRef}>
-            <div id="header-text">WeeklyBuild</div>
-            <div id="ground" ref={groundRef}></div>
-            <div id="rabbit" ref={rabbitRef}></div>
+            <div className="header-content">
+                <div id="header-text">WeeklyBuild</div>
+                <div id="ground" ref={groundRef}></div>
+                <div id="rabbit" ref={rabbitRef}></div>
+            </div>
         </div>
     );
 };

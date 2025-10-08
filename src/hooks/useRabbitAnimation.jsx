@@ -32,7 +32,7 @@ const useRabbitAnimation = (rabbitRef, containerRef) => {
         const rabbitFrames = [rabbit1, rabbit2, rabbit3, rabbit2];
 
         // Animation state
-        let position = 300;
+        let position = 400;  // Start from right side to avoid WeeklyBuild text overlap
         let frameIndex = 0;
         let direction = 1;
         let jumpPhase = 0;
@@ -92,13 +92,15 @@ const useRabbitAnimation = (rabbitRef, containerRef) => {
                 position += direction * 4;
             }
 
-            const containerWidth = container.offsetWidth;
+            // Use the header-content width (800px max-width) instead of full container
+            const headerContent = container.querySelector('.header-content');
+            const containerWidth = headerContent ? headerContent.offsetWidth : 800;
             const rabbitWidth = 80;
 
             // Change direction at boundaries
             if (position >= containerWidth - rabbitWidth - 40) {
                 direction = -1;
-            } else if (position <= 300) {
+            } else if (position <= 200) {  // Keep rabbit away from WeeklyBuild text
                 direction = 1;
             }
 
