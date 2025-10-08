@@ -11,7 +11,9 @@ function initApp() {
         'useRabbitAnimation',
         'Header',
         'NavPane',
-        'ContentArea',
+        'HomePage',
+        'ProjectsPage',
+        'AboutPage',
         'Footer',
         'App'
     ];

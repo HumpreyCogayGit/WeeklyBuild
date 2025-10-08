@@ -3,17 +3,16 @@
  * Navigation sidebar with interactive menu items
  * Manages active section state and smooth opacity transitions
  * @param {boolean} isVisible - Controls the visibility/opacity of the nav pane
+ * @param {string} currentPage - The currently active page
+ * @param {Function} onNavigate - Callback to navigate to a different page
  */
-const NavPane = ({ isVisible }) => {
-    const [activeSection, setActiveSection] = React.useState('home');
-
-    const handleNavClick = (section, e) => {
+const NavPane = ({ isVisible, currentPage, onNavigate }) => {
+    const handleNavClick = (pageId, e) => {
         e.preventDefault();
-        setActiveSection(section);
-        
-        // Could dispatch custom event or call parent callback here
-        // for routing or content updates
-        console.log(`Navigating to: ${section}`);
+        if (onNavigate) {
+            onNavigate(pageId);
+        }
+        console.log(`Navigating to: ${pageId}`);
     };
 
     const menuItems = [
@@ -31,7 +30,7 @@ const NavPane = ({ isVisible }) => {
                             href={item.href} 
                             onClick={(e) => handleNavClick(item.id, e)}
                             style={{ 
-                                backgroundColor: activeSection === item.id ? '#e0e0e0' : 'transparent' 
+                                backgroundColor: currentPage === item.id ? '#e0e0e0' : 'transparent' 
                             }}
                         >
                             {item.label}
