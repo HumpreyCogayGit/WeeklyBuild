@@ -9,21 +9,9 @@ const Header = ({ onAnimationComplete }) => {
     const groundRef = React.useRef(null);
     const rabbitRef = React.useRef(null);
 
-    // Ground animation with callback when complete
-    // Hooks must be called at top level
-    React.useEffect(() => {
-        if (typeof useGroundAnimation === 'undefined') {
-            console.error('useGroundAnimation hook not loaded!');
-            return;
-        }
-        if (typeof useRabbitAnimation === 'undefined') {
-            console.error('useRabbitAnimation hook not loaded!');
-            return;
-        }
-    }, []);
-
-    // Call custom hooks
+    // Call custom hooks - they MUST be called unconditionally at top level
     useGroundAnimation(groundRef, containerRef, () => {
+        console.log('Ground animation complete');
         if (onAnimationComplete) onAnimationComplete();
     });
 
