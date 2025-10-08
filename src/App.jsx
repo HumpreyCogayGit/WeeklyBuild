@@ -6,18 +6,23 @@
 const App = () => {
     const [contentVisible, setContentVisible] = React.useState(false);
 
-    // Trigger content visibility after animation delay
+    // Handle animation completion from Header
+    const handleAnimationComplete = React.useCallback(() => {
+        setContentVisible(true);
+    }, []);
+
+    // Fallback timer in case animation doesn't trigger
     React.useEffect(() => {
         const timer = setTimeout(() => {
             setContentVisible(true);
-        }, 2000);
+        }, 3000);
 
         return () => clearTimeout(timer);
     }, []);
 
     return (
         <>
-            <Header />
+            <Header onAnimationComplete={handleAnimationComplete} />
             <div id="main-content">
                 <NavPane isVisible={contentVisible} />
                 <ContentArea isVisible={contentVisible} />

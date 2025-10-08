@@ -2,19 +2,31 @@
  * Header Component
  * Displays the WeeklyBuild header with animated ground and hopping rabbit
  * Uses custom hooks for ground and rabbit animations
+ * @param {Function} onAnimationComplete - Callback when animation completes
  */
-const Header = () => {
+const Header = ({ onAnimationComplete }) => {
     const containerRef = React.useRef(null);
     const groundRef = React.useRef(null);
     const rabbitRef = React.useRef(null);
-    const [showContent, setShowContent] = React.useState(false);
 
     // Ground animation with callback when complete
+    // Hooks must be called at top level
+    React.useEffect(() => {
+        if (typeof useGroundAnimation === 'undefined') {
+            console.error('useGroundAnimation hook not loaded!');
+            return;
+        }
+        if (typeof useRabbitAnimation === 'undefined') {
+            console.error('useRabbitAnimation hook not loaded!');
+            return;
+        }
+    }, []);
+
+    // Call custom hooks
     useGroundAnimation(groundRef, containerRef, () => {
-        setShowContent(true);
+        if (onAnimationComplete) onAnimationComplete();
     });
 
-    // Rabbit hopping animation
     useRabbitAnimation(rabbitRef, containerRef);
 
     return (
