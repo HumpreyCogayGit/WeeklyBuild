@@ -1,0 +1,47 @@
+{
+  "name": "weeklyBuild",
+  "version": "2.0.0",
+  "description": "A React.js application featuring an animated ASCII rabbit with enterprise-level architecture",
+  "main": "src/main.jsx",
+  "scripts": {
+    "start": "npx http-server public -p 8000 -o",
+    "serve": "python -m http.server 8000 --directory public"
+  },
+  "keywords": [
+    "react",
+    "javascript",
+    "animation",
+    "ascii-art",
+    "enterprise-architecture",
+    "component-based",
+    "hooks"
+  ],
+  "author": "HumpreyCogayGit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HumpreyCogayGit/WeeklyBuild"
+  },
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {},
+  "architecture": {
+    "pattern": "Component-Based Architecture with Custom Hooks",
+    "structure": {
+      "public": "Static assets and entry HTML",
+      "src/components": "Reusable React components",
+      "src/hooks": "Custom React hooks for business logic",
+      "src/styles": "CSS stylesheets",
+      "src/utils": "Utility functions and helpers"
+    },
+    "principles": [
+      "Separation of Concerns",
+      "Single Responsibility Principle",
+      "Component Reusability",
+      "Hook Composition",
+      "Declarative Programming"
+    ]
+  },
+  "license": "MIT"
+}
