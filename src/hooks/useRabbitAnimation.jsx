@@ -92,9 +92,9 @@ const useRabbitAnimation = (rabbitRef, containerRef) => {
                 position += direction * 4;
             }
 
-            // Use the header-content width (800px max-width) instead of full container
+            // Use the header-content width (1200px max-width) instead of full container
             const headerContent = container.querySelector('.header-content');
-            const containerWidth = headerContent ? headerContent.offsetWidth : 800;
+            const containerWidth = headerContent ? headerContent.offsetWidth : 1200;
             const rabbitWidth = 80;
 
             // Change direction at boundaries

@@ -6,7 +6,6 @@
  * @param {Function} onComplete - Callback function when animation completes
  */
 const useGroundAnimation = (groundRef, containerRef, onComplete) => {
-    const hasAnimatedRef = React.useRef(false);
     const onCompleteRef = React.useRef(onComplete);
 
     // Update callback ref without triggering re-run
@@ -18,18 +17,17 @@ const useGroundAnimation = (groundRef, containerRef, onComplete) => {
         const groundEl = groundRef.current;
         const container = containerRef.current;
 
-        if (!groundEl || !container || hasAnimatedRef.current) return;
+        if (!groundEl || !container) return;
 
-        // Mark as animated to prevent re-runs
-        hasAnimatedRef.current = true;
+        // Always ensure the ground animation is visible
 
         const animateGround = () => {
             // Clear any existing content
             groundEl.innerHTML = '';
 
-            // Use the header-content width (800px max-width) instead of full container
+            // Use the header-content width (1200px max-width) instead of full container
             const headerContent = container.querySelector('.header-content');
-            const containerWidth = headerContent ? headerContent.offsetWidth : 800;
+            const containerWidth = headerContent ? headerContent.offsetWidth : 1200;
             const charSpacing = 8;
             const numChars = Math.floor(containerWidth / charSpacing);
             const groundChars = ['_', '-', '=', '.', '_', '-'];
@@ -40,33 +38,23 @@ const useGroundAnimation = (groundRef, containerRef, onComplete) => {
                 char.className = 'ground-char';
                 char.textContent = groundChars[i % groundChars.length];
                 char.style.left = (i * charSpacing) + 'px';
-                char.style.top = '-100px';
+                char.style.top = '0px';  // Start at ground level
+                char.style.opacity = '0.5';  // Make them visible by default
                 groundEl.appendChild(char);
-
-                // Animate each character falling
-                const delay = i * 15; // Stagger from left to right
-                setTimeout(() => {
-                    char.style.transition = 'top 0.3s ease-in, opacity 0.3s ease-in';
-                    char.style.top = '0px';
-                    char.style.opacity = '0.5';
-                }, delay);
             }
 
-            // After ground animation completes, trigger callback
-            const totalAnimTime = numChars * 15 + 300;
-            setTimeout(() => {
-                if (onCompleteRef.current) {
-                    onCompleteRef.current();
-                }
-            }, totalAnimTime);
+            // Trigger callback immediately since animation is always visible
+            if (onCompleteRef.current) {
+                onCompleteRef.current();
+            }
         };
 
+        // Run animation on mount and ensure it's always visible
         animateGround();
 
-        // Cleanup function - but don't clear the hasAnimated flag
+        // Cleanup function
         return () => {
             // Don't clear groundEl to preserve the animation
-            // The hasAnimatedRef ensures it only runs once
         };
     }, [groundRef, containerRef]); // Removed onComplete from dependencies
 };
