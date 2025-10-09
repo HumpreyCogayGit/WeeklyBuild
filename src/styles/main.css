@@ -90,7 +90,7 @@ body {
 
 .ground-char {
     position: absolute;
-    opacity: 0.5;
+    opacity: 0;
 }
 
 /* Rabbit Animation Styles */

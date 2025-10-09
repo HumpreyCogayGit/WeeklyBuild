@@ -32,21 +32,32 @@ const useGroundAnimation = (groundRef, containerRef, onComplete) => {
             const numChars = Math.floor(containerWidth / charSpacing);
             const groundChars = ['_', '-', '=', '.', '_', '-'];
 
-            // Create ground characters
+            // Create ground characters with falling animation
             for (let i = 0; i < numChars; i++) {
                 const char = document.createElement('span');
                 char.className = 'ground-char';
                 char.textContent = groundChars[i % groundChars.length];
                 char.style.left = (i * charSpacing) + 'px';
-                char.style.top = '0px';  // Start at ground level
-                char.style.opacity = '0.5';  // Make them visible by default
+                char.style.top = '-100px';  // Start above, will fall down
+                char.style.opacity = '0';   // Start invisible, will fade in
                 groundEl.appendChild(char);
+
+                // Animate each character falling with staggered timing
+                const delay = i * 15; // Stagger from left to right
+                setTimeout(() => {
+                    char.style.transition = 'top 0.3s ease-in, opacity 0.3s ease-in';
+                    char.style.top = '0px';      // Fall to ground level
+                    char.style.opacity = '0.5';  // Fade in to visible
+                }, delay);
             }
 
-            // Trigger callback immediately since animation is always visible
-            if (onCompleteRef.current) {
-                onCompleteRef.current();
-            }
+            // After ground animation completes, trigger callback
+            const totalAnimTime = numChars * 15 + 300;
+            setTimeout(() => {
+                if (onCompleteRef.current) {
+                    onCompleteRef.current();
+                }
+            }, totalAnimTime);
         };
 
         // Run animation on mount and ensure it's always visible
