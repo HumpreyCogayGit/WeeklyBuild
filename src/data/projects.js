@@ -40,6 +40,42 @@ const PROJECTS_DATA = {
                     ],
                     github: '',
                     demo: './src/projects/spirograph.html',
+                    featured: false
+                },
+                {
+                    id: 'unsharp-mask',
+                    slug: 'unsharp-mask',
+                    title: 'Unsharp Mask Image Sharpening',
+                    subtitle: 'Canvas API + Fabric.js',
+                    description: 'An interactive image sharpening tool using the unsharp masking technique with Gaussian blur convolution.',
+                    status: 'completed',
+                    date: '2025-10-10',
+                    technologies: ['HTML5', 'JavaScript', 'Canvas API', 'Fabric.js', 'Image Processing'],
+                    overview: 'A real-time image sharpening tool that demonstrates the unsharp masking technique. Apply Gaussian blur to create a mask, then enhance edges by combining the original with a high-pass filter.',
+                    problem: 'How can we sharpen digital images to enhance edge detail without introducing artifacts or noise?',
+                    solution: 'Implemented the classic unsharp masking algorithm using convolution filters and pixel-level manipulation with Canvas API.',
+                    challenges: [
+                        'Implementing efficient convolution for 7x7 Gaussian kernel',
+                        'Handling CORS restrictions for cross-origin image loading',
+                        'Optimizing performance for real-time pixel manipulation',
+                        'Balancing sharpening strength to avoid over-sharpening artifacts'
+                    ],
+                    learnings: [
+                        'Convolution mathematics and implementation',
+                        'Canvas ImageData API for pixel manipulation',
+                        'High-pass filtering techniques for edge detection',
+                        'Memory management for multiple canvas operations',
+                        'Fabric.js for enhanced canvas management'
+                    ],
+                    futureImprovements: [
+                        'Add adjustable sharpening strength slider',
+                        'Implement multiple filter kernels (3x3, 5x5, 9x9)',
+                        'Add before/after comparison slider',
+                        'Support drag-and-drop custom images',
+                        'Add export functionality for sharpened images'
+                    ],
+                    github: '',
+                    demo: './src/projects/unsharp-mask.html',
                     featured: true
                 },
                 {
