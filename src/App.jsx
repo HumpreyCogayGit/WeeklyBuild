@@ -50,8 +50,6 @@ const App = () => {
                 return <HomePage isVisible={contentVisible} />;
             case 'projects':
                 return <ProjectsPage isVisible={contentVisible} onNavigate={handleNavigate} />;
-            case 'blog':
-                return <BlogPage isVisible={contentVisible} />;
             case 'about':
                 return <AboutPage isVisible={contentVisible} />;
             default:
