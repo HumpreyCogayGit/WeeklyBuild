@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PixCulate Demo</title>
+  <style>
+    body {
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      min-height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+      line-height: 1.5;
+    }
+    canvas, img {
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      max-width: 90vw;
+      max-height: 80vh;
+      margin-bottom: 20px;
+    }
+    #controls {
+      margin-top: 20px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    label {
+      margin: 6px 0;
+    }
+    #writeup {
+      max-width: 900px;
+      padding: 20px;
+      text-align: justify;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label>
+      Pixel Size: <span id="pixelSizeValue">9</span>
+      <input type="range" id="pixelSizeSlider" min="2" max="20" value="9" />
+    </label>
+
+    <label>
+      Resolution:
+      <select id="resolutionSelect">
+        <option value="5">Fine (5)</option>
+        <option value="10" selected>Medium (10)</option>
+        <option value="20">Coarse (20)</option>
+        <option value="40">Very Coarse (40)</option>
+      </select>
+    </label>
+
+    <label>
+      <input type="checkbox" id="toggleOriginal" />
+      Show Original Image
+    </label>
+  </div>
+
+  <img
+    id="imagePixCulated"
+    src="images/user-image.jpg"
+    alt="PixCulated"
+    style="display: none;"
+  />
+
+  <script>
+    (function (window) {
+      let currentCanvas = null;
+
+      function PixCular(img, options) {
+        this.img = img;
+        const canvas = this.canvas = document.createElement("canvas");
+        this.ctx = canvas.getContext("2d");
+
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.className = img.className;
+        canvas.id = "pixCanvas";
+
+        this.render(options);
+
+        if (currentCanvas) {
+          currentCanvas.remove();
+        }
+        currentCanvas = canvas;
+
+        img.parentNode.insertBefore(canvas, img.nextSibling);
+        canvas.style.display = "block";
+        img.style.display = "none";
+
+        const toggle = document.getElementById("toggleOriginal");
+        toggle.addEventListener("change", function () {
+          if (toggle.checked) {
+            img.style.display = "block";
+            canvas.style.display = "none";
+          } else {
+            img.style.display = "none";
+            canvas.style.display = "block";
+          }
+        });
+      }
+
+      PixCular.prototype.render = function (options) {
+        const w = this.width = this.canvas.width;
+        const h = this.height = this.canvas.height;
+        this.ctx.drawImage(this.img, 0, 0);
+        this.imgData = this.ctx.getImageData(0, 0, w, h).data;
+        this.ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < options.length; i++) {
+          this.renderCirclesAnimated(options[i]);
+        }
+      };
+
+      PixCular.prototype.renderCirclesAnimated = function (opts) {
+        const w = this.width;
+        const h = this.height;
+        const ctx = this.ctx;
+        const imgData = this.imgData;
+        const res = opts.resolution;
+        const size = opts.size;
+        const alpha = 1;
+        const cols = Math.ceil(w / res);
+        const rows = Math.ceil(h / res);
+        const circles = [];
+
+        for (let row = 0; row < rows; row++) {
+          const y = (row + 0.5) * res;
+          const pixelY = Math.min(Math.max(Math.floor(y), 0), h - 1);
+          for (let col = 0; col < cols; col++) {
+            const x = (col + 0.5) * res;
+            const pixelX = Math.min(Math.max(Math.floor(x), 0), w - 1);
+            const pixelIndex = (pixelX + pixelY * w) * 4;
+            const r = imgData[pixelIndex];
+            const g = imgData[pixelIndex + 1];
+            const b = imgData[pixelIndex + 2];
+            const a = alpha * (imgData[pixelIndex + 3] / 255);
+            circles.push({ x, y, r, g, b, a });
+          }
+        }
+
+        circles.sort(() => Math.random() - 0.5);
+
+        let frame = 0;
+        const totalFrames = 60;
+
+        function easeInExpo(t) {
+          return t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
+        }
+
+        function animate() {
+          ctx.clearRect(0, 0, w, h);
+          const progress = easeInExpo(frame / totalFrames);
+          const count = Math.min(Math.floor(progress * circles.length), circles.length);
+
+          for (let i = 0; i < count; i++) {
+            const c = circles[i];
+            ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${c.a})`;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+          }
+
+          frame++;
+          if (frame <= totalFrames) {
+            requestAnimationFrame(animate);
+          }
+        }
+
+        animate();
+      };
+
+      HTMLImageElement.prototype.PixCulate = function (options) {
+        return new PixCular(this, options);
+      };
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const img = document.getElementById("imagePixCulated");
+        const slider = document.getElementById("pixelSizeSlider");
+        const valueLabel = document.getElementById("pixelSizeValue");
+        const resolutionSelect = document.getElementById("resolutionSelect");
+
+        function renderWithSettings() {
+          const size = parseInt(slider.value);
+          const res = parseInt(resolutionSelect.value);
+          valueLabel.textContent = size;
+          img.PixCulate([{ resolution: res, size: size }]);
+        }
+
+        slider.addEventListener("input", renderWithSettings);
+        resolutionSelect.addEventListener("change", renderWithSettings);
+
+        img.decode().then(renderWithSettings).catch(() => {
+          img.onload = renderWithSettings;
+        });
+      });
+    })(window);
+  </script>
+
+  <div id="writeup">
+    <h2>PixCulate: Dynamic Pixelation Effect with Adjustable Resolution</h2>
+
+    <h3>Overview</h3>
+    <p>
+      PixCulate is an interactive web-based demo that transforms a static image into a dynamic mosaic of colored circles, creating a pixelated animation effect using the HTML5 Canvas API. Users can adjust both the pixel size (circle diameter) and the resolution (sampling density) to control how detailed or abstract the pixelation looks.
+    </p>
+
+    <h3>Concept and Algorithm</h3>
+    <p>
+      The program works by reading the image's pixel data and redrawing it as a collection of colored circles. Instead of displaying every pixel, the algorithm samples colors at evenly spaced intervals defined by the resolution setting, then gradually animates their appearance to recreate the image.
+    </p>
+
+    <h4>1. Load the Image</h4>
+    <p>
+      The image is loaded invisibly in the HTML. Once decoding is complete, the rendering function starts processing the image into a canvas element.
+    </p>
+
+    <h4>2. Initialize the Canvas</h4>
+    <p>
+      A canvas element the same size as the image is created. The image is drawn onto it, and the pixel data is extracted using <code>getImageData()</code>, providing raw RGBA values for each pixel.
+    </p>
+
+    <h4>3. Divide the Image into a Grid</h4>
+    <p>
+      The image is divided into a grid based on the resolution. Each grid cell represents one circular "pixel." The program calculates the average color in that region and creates a circle with that color.
+    </p>
+
+    <h4>4. Adjustable Resolution</h4>
+    <p>
+      The new feature allows the user to select predefined resolutions using a dropdown menu. Smaller values produce fine, detailed images, while larger values create a coarser, more abstract look. Changing the dropdown instantly re-renders the effect.
+    </p>
+
+    <h4>5. Animation</h4>
+    <p>
+      Before drawing, the order of circles is randomized. The circles appear gradually over multiple frames using an exponential easing function, creating a smooth "reveal" animation of the image.
+    </p>
+
+    <h4>6. Drawing Circles</h4>
+    <p>
+      Each circle is drawn at its corresponding grid position with its sampled color. Over time, the accumulation of circles forms the full image. The pixel size slider controls the diameter of each circle in real time.
+    </p>
+
+    <h4>7. User Controls</h4>
+    <ul>
+      <li>Pixel Size Slider – changes the size of the drawn circles.</li>
+      <li>Resolution Dropdown – adjusts the density of the pixelation.</li>
+      <li>Show Original Image – toggles between the original and pixelated view.</li>
+    </ul>
+
+    <h3>Key Technical Features</h3>
+    <ul>
+      <li>HTML5 Canvas for color sampling and drawing.</li>
+      <li>Dynamic resolution control via dropdown.</li>
+      <li>requestAnimationFrame for smooth GPU-synced animation.</li>
+      <li>Exponential easing for organic animation speed.</li>
+      <li>Real-time interactivity through DOM input events.</li>
+    </ul>
+
+    <h3>Algorithm Summary</h3>
+    <pre>
+1. Load and decode the image.
+2. Create a canvas matching the image dimensions.
+3. Extract pixel color data using getImageData().
+4. Divide image into grid cells based on resolution.
+5. For each cell:
+   - Sample the pixel color at its center.
+   - Store a circle object with x, y, and color.
+6. Randomize the order of circles.
+7. Animate circle drawing using exponential easing.
+8. Allow user adjustments for pixel size and resolution.
+    </pre>
+
+    <h3>Applications</h3>
+    <ul>
+      <li>Educational visualization of image sampling and rasterization.</li>
+      <li>Interactive digital art and design effects.</li>
+      <li>Creative website animations and transitions.</li>
+      <li>Demonstrations of canvas rendering and animation concepts.</li>
+    </ul>
+
+    <h3>Conclusion</h3>
+    <p>
+      PixCulate demonstrates how image data can be reinterpreted through simple mathematical sampling and animation techniques. By allowing both pixel size and resolution to be adjusted interactively, it helps users understand the relationship between image detail, sampling density, and rendering style.
+    </p>
+  </div>
+</body>
+</html>

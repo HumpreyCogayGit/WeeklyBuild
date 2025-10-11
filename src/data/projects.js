@@ -11,6 +11,40 @@ const PROJECTS_DATA = {
             description: 'Code snippets, algorithm implementations, and developer utilities.',
             icon: '',
             projects: [
+                {
+                    id: 'pixcular',
+                    slug: 'pixcular',
+                    title: 'PixCulate',
+                    subtitle: 'Dynamic Pixelation Effect with Canvas',
+                    description: 'An interactive image pixelation tool that transforms images into animated mosaics of colored circles using HTML5 Canvas.',
+                    status: 'completed',
+                    date: '2025-10-11',
+                    technologies: ['HTML5', 'CSS3', 'JavaScript', 'Canvas API', 'Image Processing'],
+                    overview: 'PixCulate transforms static images into dynamic pixelated animations using the Canvas API. Users can adjust pixel size and resolution to control the visual effect.',
+                    problem: 'How can we create engaging visual effects that demonstrate image processing and canvas manipulation techniques?',
+                    solution: 'Built an interactive tool that samples image pixels, converts them to colored circles, and animates their appearance with customizable resolution and size controls.',
+                    challenges: [
+                        'Implementing efficient pixel sampling and color extraction',
+                        'Creating smooth animation with exponential easing',
+                        'Optimizing canvas rendering performance for real-time interaction',
+                        'Handling different image sizes and aspect ratios'
+                    ],
+                    learnings: [
+                        'Canvas ImageData API for pixel manipulation',
+                        'Animation techniques with requestAnimationFrame',
+                        'Image processing algorithms and sampling methods',
+                        'Real-time parameter adjustment with DOM events'
+                    ],
+                    futureImprovements: [
+                        'Add support for different shapes (squares, hexagons)',
+                        'Implement color palette reduction options',
+                        'Add export functionality for animated GIFs',
+                        'Include drag-and-drop custom image support'
+                    ],
+                    github: '',
+                    demo: './src/projects/pixcular.html',
+                    featured: true
+                },
                  {
                     id: 'spirograph-generator',
                     slug: 'spirograph-generator',
@@ -76,7 +110,7 @@ const PROJECTS_DATA = {
                     ],
                     github: '',
                     demo: './src/projects/unsharp-mask.html',
-                    featured: true
+                    featured: false
                 },
                 {
                     id: 'python-design-patterns',
