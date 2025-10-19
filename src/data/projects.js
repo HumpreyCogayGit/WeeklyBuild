@@ -12,6 +12,40 @@ const PROJECTS_DATA = {
             icon: '',
             projects: [
                 {
+                    id: 'basicpixelcoloration',
+                    slug: 'basicpixelcoloration',
+                    title: 'Basic Pixel Coloration',
+                    subtitle: 'Canvas Color Effects & Image Processing',
+                    description: 'A simple interactive demo for toggling image views and applying color effects (invert, grayscale, sepia, high contrast, and custom) using HTML5 Canvas.',
+                    status: 'completed',
+                    date: '2025-10-19',
+                    technologies: ['HTML5', 'JavaScript', 'Canvas API', 'Image Processing'],
+                    overview: 'Demonstrates basic pixel-level color manipulation and effect application on images using the Canvas API. Includes toggling between original and processed views.',
+                    problem: 'How can we apply real-time color effects to images in the browser with minimal code?',
+                    solution: 'Utilizes Canvas ImageData and custom color mapping arrays to implement several color effects and toggling between views.',
+                    challenges: [
+                        'Efficient pixel manipulation for large images',
+                        'Implementing multiple color effects with minimal code',
+                        'Ensuring cross-browser compatibility for image loading',
+                        'Handling aspect ratio and scaling'
+                    ],
+                    learnings: [
+                        'Canvas ImageData API basics',
+                        'Color mapping and effect algorithms',
+                        'DOM event handling for UI controls',
+                        'Image scaling and rendering'
+                    ],
+                    futureImprovements: [
+                        'Add more color effects (e.g., blur, sharpen)',
+                        'Support drag-and-drop for custom images',
+                        'Add download/export functionality for processed images',
+                        'Improve UI/UX for effect selection'
+                    ],
+                    github: '',
+                    demo: './src/projects/basicpixelcoloration.html',
+                    featured: true
+                },
+                {
                     id: 'pixcular',
                     slug: 'pixcular',
                     title: 'PixCulate',
@@ -43,7 +77,7 @@ const PROJECTS_DATA = {
                     ],
                     github: '',
                     demo: './src/projects/pixcular.html',
-                    featured: true
+                    featured: false
                 },
                  {
                     id: 'spirograph-generator',
@@ -173,8 +207,8 @@ const PROJECTS_DATA = {
                     github: '',
                     demo: '',
                     featured: false
-                }
-               
+                },
+                
                 // Add more snippets/algorithm projects here
             ]
         },
