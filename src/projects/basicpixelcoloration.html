@@ -18,6 +18,58 @@
   <br>
   <canvas id="CanvasOR" width="700" height="500"></canvas>
   <canvas id="CanvasBW" width="700" height="500" style="display:none;"></canvas>
+  
+    <div id="writeup" style="max-width:900px; padding:20px; text-align:justify;">
+      <h2>Overview</h2>
+      <p>
+        Basic Pixel Coloration is an interactive web demo that lets you upload any image and instantly apply a variety of color effects using the HTML5 Canvas API. Choose from custom coloration, invert, grayscale, sepia, and high contrast effects, and see the results in real time. The app automatically resizes to fit your image, so you can experiment with photos of any size.
+      </p>
+
+      <h3>Concept and Algorithm</h3>
+      <p>
+        The program loads your image and draws it onto a canvas. When you select an effect, the pixel data is read and transformed using color mapping arrays or formulas, then written back to the canvas for instant feedback. You can toggle between the original and processed views, and upload new images at any time.
+      </p>
+
+      <h4>How It Works</h4>
+      <ol>
+        <li>Upload an image or use the default.</li>
+        <li>Canvas resizes to fit the image.</li>
+        <li>Select a color effect from the dropdown.</li>
+        <li>Pixel data is processed and displayed live.</li>
+        <li>Toggle between original and processed views.</li>
+      </ol>
+
+      <h3>Key Features</h3>
+      <ul>
+        <li>Upload any image (JPG, PNG, etc.)</li>
+        <li>Instant color effect application: invert, grayscale, sepia, high contrast, custom</li>
+        <li>Canvas resizes to fit your image</li>
+        <li>Toggle between original and processed views</li>
+        <li>Efficient pixel manipulation with Canvas ImageData</li>
+      </ul>
+
+      <h3>Algorithm Summary</h3>
+      <ul>
+        <li><b>Custom Effect:</b> Applies non-linear color mapping to each channel using pre-defined arrays (RColorRange, GColorRange, BColorRange), creating a unique stylized coloration.</li>
+        <li><b>Invert Colors:</b> For each pixel, replaces R, G, B values with 255 minus their original value, producing a photographic negative effect.</li>
+        <li><b>Grayscale:</b> Calculates the average of R, G, B for each pixel and sets all three channels to this value, resulting in a monochrome image.</li>
+        <li><b>Sepia:</b> Uses weighted sums of the original R, G, B values to simulate a warm, brownish tone reminiscent of vintage photographs.</li>
+        <li><b>High Contrast:</b> Sets each channel to either 0 or 255 depending on whether its value is below or above 128, creating a stark, posterized look.</li>
+      </ul>
+
+      <h3>Applications</h3>
+      <ul>
+        <li>Educational demos for image processing and color theory</li>
+        <li>Quick visual experimentation with photos</li>
+        <li>Digital art and creative effects</li>
+        <li>Learning Canvas API and pixel manipulation</li>
+      </ul>
+
+      <h3>Conclusion</h3>
+      <p>
+        Basic Pixel Coloration shows how easy it is to manipulate image colors in the browser using JavaScript and Canvas. Upload your own photo and try out the effects to see how pixel data can be transformed in real time!
+      </p>
+    </div>
 
   <script>
   const canvasOR = document.getElementById('CanvasOR');
