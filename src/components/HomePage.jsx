@@ -11,27 +11,38 @@ const HomePage = ({ isVisible }) => {
 
             <p>I share my journey of continuous learning, technical discoveries, and personal reflections on the ever-evolving world of technology. Each post represents a step forward in my quest to build something new every week.</p>
 
-            <section className="recent-posts">
-                <h2>Recent Posts</h2>
-                <p>
-                    Latest build:
-                    {' '}
-                    <a
-                        href="./src/projects/pixcular.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        PixCulate
-                    </a>
-                    — a playful Canvas experiment that turns portraits into animated pixel mosaics in just a few seconds.
-                </p>
-                <p><em>Blog posts coming soon! I'm currently working on some exciting content to share with you.</em></p>
-                <p>
-                    In the meantime, check out my{' '}
-                    <a href="#projects" style={{ color: '#6B8E23', textDecoration: 'none' }}>Projects</a>
-                    {' '}to see what I've been building.
-                </p>
-            </section>
+
+                        <section className="recent-posts">
+                                <h2>Recent Posts</h2>
+                                <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Oct 20, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/basicpixelcoloration.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Basic Pixel Coloration
+                                    </a>
+                                    — a simple interactive demo that lets you upload any image and instantly apply color effects (invert, grayscale, sepia, high contrast, and more) using HTML5 Canvas. Try it with your own photos!
+                                </div>
+                                <div>
+                                   <strong>Oct 16, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/pixcular.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        PixCulate
+                                    </a>
+                                    — a playful Canvas experiment that turns portraits into animated pixel mosaics in just a few seconds.
+                                </div>
+                                <p><em>Blog posts coming soon! I'm currently working on some exciting content to share with you.</em></p>
+                                <p>
+                                        In the meantime, check out my{' '}
+                                        <a href="#projects" style={{ color: '#6B8E23', textDecoration: 'none' }}>Projects</a>
+                                        {' '}to see what I've been building.
+                                </p>
+                        </section>
 
             <section className="what-to-expect">
                 <h2>What to Expect</h2>
