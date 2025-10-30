@@ -56,7 +56,7 @@ const HomePage = ({ isVisible }) => {
                                     >
                                         Unsharp Mask Image Sharpening
                                     </a>
-                                    — Interactive tool for sharpening images using the unsharp masking technique and Canvas. Adjust sharpness and see edge enhancement in real time.
+                                    — Implementing Guassian blur and unsharp masking techniques to sharpen images interactively using HTML5 Canvas.
                                 </div>
                                 <div style={{ marginBottom: '1.5em' }}>
                                     <strong>Oct 8, 2025:</strong> &nbsp;
@@ -67,7 +67,7 @@ const HomePage = ({ isVisible }) => {
                                     >
                                         Spirograph Generator
                                     </a>
-                                    — Create beautiful mathematical patterns and spirograph art interactively with real-time parameter controls and animation.
+                                    — Creating a digital spirograph tool that generates beautiful mathematical patterns with real-time controls and animation.
                                 </div>
                                 <p><em>Blog posts coming soon! I'm currently working on some exciting content to share with you.</em></p>
                                 <p>
