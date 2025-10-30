@@ -36,8 +36,8 @@ const HomePage = ({ isVisible }) => {
                                     </a>
                                     — a simple interactive demo that lets you upload any image and instantly apply color effects (invert, grayscale, sepia, high contrast, and more) using HTML5 Canvas. Try it with your own photos!
                                 </div>
-                                <div>
-                                   <strong>Oct 16, 2025:</strong> &nbsp;
+                                <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Oct 16, 2025:</strong> &nbsp;
                                     <a
                                         href="./src/projects/pixcular.html"
                                         target="_blank"
@@ -46,6 +46,28 @@ const HomePage = ({ isVisible }) => {
                                         PixCulate
                                     </a>
                                     — a playful Canvas experiment that turns portraits into animated pixel mosaics in just a few seconds.
+                                </div>
+                                <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Oct 10, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/unsharpmask.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Unsharp Mask Image Sharpening
+                                    </a>
+                                    — Interactive tool for sharpening images using the unsharp masking technique and Canvas. Adjust sharpness and see edge enhancement in real time.
+                                </div>
+                                <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Oct 8, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/spirograph.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Spirograph Generator
+                                    </a>
+                                    — Create beautiful mathematical patterns and spirograph art interactively with real-time parameter controls and animation.
                                 </div>
                                 <p><em>Blog posts coming soon! I'm currently working on some exciting content to share with you.</em></p>
                                 <p>
