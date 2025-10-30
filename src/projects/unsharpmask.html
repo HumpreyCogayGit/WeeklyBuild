@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Unsharp Mask Image Sharpening</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+			background: white;
+			min-height: 100vh;
+			padding: 20px;
+			color: #333;
+			overflow-x: hidden;
+		}
+
+		.container {
+			max-width: 1400px;
+			margin: 0 auto;
+			background: white;
+			padding: 40px;
+			overflow: hidden;
+		}
+
+		h1 {
+			color: #556B2F;
+			margin-bottom: 10px;
+			font-size: 2.5em;
+			font-weight: 700;
+		}
+
+		.subtitle {
+			color: #666;
+			margin-bottom: 30px;
+			font-size: 1.1em;
+		}
+
+		.controls {
+			margin-bottom: 30px;
+			padding: 20px;
+			background: transparent;
+			display: flex;
+			align-items: center;
+			gap: 15px;
+		}
+
+		#caption {
+			font-size: 1.3em;
+			font-weight: 600;
+			color: #556B2F;
+			margin: 0;
+		}
+
+		label {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			cursor: pointer;
+			font-weight: 500;
+			color: #333;
+		}
+
+		input[type="checkbox"] {
+			width: 20px;
+			height: 20px;
+			cursor: pointer;
+		}
+
+		input[type="checkbox"]:disabled {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		.slider-control {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			font-weight: 500;
+			color: #333;
+		}
+
+		input[type="range"] {
+			width: 150px;
+			cursor: pointer;
+		}
+
+		input[type="range"]:disabled {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		.canvas-container {
+			width: 100%;
+			height: 600px;
+			overflow: hidden;
+			border: none;
+			background: transparent;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#canvas {
+			display: block;
+			max-width: 100%;
+			max-height: 100%;
+			height: auto;
+			width: auto;
+			object-fit: contain;
+		}
+
+		#sourceImage {
+			display: none;
+		}
+
+		.loading {
+			text-align: center;
+			padding: 40px;
+			color: #666;
+			font-style: italic;
+		}
+
+		@media (max-width: 768px) {
+			.container {
+				padding: 20px;
+			}
+
+			h1 {
+				font-size: 2em;
+			}
+
+			.controls {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Unsharp Mask Image Sharpening</h1>
+		<p class="subtitle">Interactive demonstration of image sharpening using unsharp masking technique with Gaussian blur</p>
+
+		<div class="controls">
+			<div class="slider-control">
+				<label for="kernelSize">Kernel Size:</label>
+				<input type="range" id="kernelSize" min="3" max="9" step="2" value="7" disabled />
+				<span id="kernelValue">7x7</span>
+			</div>
+			<label>
+				<input type="checkbox" id="toggle" disabled />
+				Toggle Sharpened
+			</label>
+			<h4 id="caption">Loading...</h4>
+		</div>
+
+		<div class="canvas-container">
+			<img id="sourceImage" crossorigin="anonymous" />
+			<canvas id="canvas"></canvas>
+		</div>
+	</div>
+
+	<script src="../lib/fabric.min.js"></script>
+	<script>
+		function initializeApp() {
+			console.log(fabric ? 'Fabric loaded: ' + fabric.version : 'Fabric not loaded');
+
+			const image = document.getElementById('sourceImage');
+			const caption = document.getElementById('caption');
+			const toggle = document.getElementById('toggle');
+			const kernelSlider = document.getElementById('kernelSize');
+			const kernelValue = document.getElementById('kernelValue');
+			const fabricCanvas = new fabric.Canvas('canvas');
+
+			let originalPixels, sharpenedCanvas, currentKernelSize = 7;
+
+			toggle.disabled = true;
+			kernelSlider.disabled = true;
+
+			// Function to generate Gaussian kernel dynamically
+			function generateGaussianKernel(size, sigma = null) {
+				if (!sigma) {
+					sigma = size / 6.0; // Default sigma
+				}
+                
+				const kernel = [];
+				const mean = Math.floor(size / 2);
+				let sum = 0;
+                
+				for (let y = 0; y < size; y++) {
+					for (let x = 0; x < size; x++) {
+						const exponent = -((x - mean) ** 2 + (y - mean) ** 2) / (2 * sigma ** 2);
+						const value = Math.exp(exponent);
+						kernel.push(value);
+						sum += value;
+					}
+				}
+                
+				// Normalize and scale to integers for better precision
+				const normalized = kernel.map(val => Math.round((val / sum) * 1000));
+				return normalized;
+			}
+
+			// Function to compute sharpened image
+			function computeSharpening(kernelSize) {
+				const gaussian = generateGaussianKernel(kernelSize);
+				const blurred = pixelFun.convolute(originalPixels, gaussian);
+
+				const width = originalPixels.width;
+				const height = originalPixels.height;
+				const output = pixelFun.createImageData(width, height);
+
+				const amount = 1.5; // sharpening strength
+
+				for (let i = 0; i < originalPixels.data.length; i += 4) {
+					for (let c = 0; c < 3; c++) {
+						const highPass = originalPixels.data[i + c] - blurred.data[i + c];
+						let sharpened = originalPixels.data[i + c] + amount * highPass;
+						sharpened = Math.min(255, Math.max(0, sharpened));
+						output.data[i + c] = sharpened;
+					}
+					output.data[i + 3] = 255; // full alpha
+				}
+
+				sharpenedCanvas = document.createElement('canvas');
+				sharpenedCanvas.width = width;
+				sharpenedCanvas.height = height;
+				sharpenedCanvas.getContext('2d').putImageData(output, 0, 0);
+                
+				// Update display if toggle is checked
+				if (toggle.checked) {
+					showImage(sharpenedCanvas, "Sharpened");
+				}
+			}
+
+			// Set crossOrigin before src to avoid tainted canvas
+			image.crossOrigin = "anonymous";
+            
+			// Using local image
+			image.src = "images/user-image.jpg";
+
+			image.onload = () => {
+				console.log('Image loaded');
+				caption.textContent = 'Original';
+                
+				originalPixels = pixelFun.getPixels(image);
+                
+				// Compute initial sharpening with default 7x7 kernel
+				computeSharpening(currentKernelSize);
+
+				toggle.disabled = false;
+				kernelSlider.disabled = false;
+				showImage(image, "Original");
+			};
+
+			image.onerror = () => {
+				caption.textContent = 'Error loading image';
+				console.error('Failed to load image');
+			};
+
+			toggle.addEventListener('change', function () {
+				if (this.checked) {
+					if (sharpenedCanvas) {
+						showImage(sharpenedCanvas, "Sharpened");
+					} else {
+						alert("Sharpened canvas not ready yet.");
+						this.checked = false;
+						showImage(image, "Original");
+					}
+				} else {
+					showImage(image, "Original");
+				}
+			});
+
+			// Kernel size slider event listener
+			kernelSlider.addEventListener('input', function () {
+				currentKernelSize = parseInt(this.value);
+				kernelValue.textContent = `${currentKernelSize}x${currentKernelSize}`;
+                
+				// Recompute sharpening with new kernel size
+				caption.textContent = 'Computing...';
+				setTimeout(() => {
+					computeSharpening(currentKernelSize);
+					caption.textContent = toggle.checked ? 'Sharpened' : 'Original';
+				}, 10);
+			});
+
+			function showImage(imgSource, text) {
+				fabricCanvas.clear();
+				caption.textContent = text;
+				const fabricImage = new fabric.Image(imgSource, { left: 0, top: 0 });
+				fabricCanvas.setWidth(imgSource.width);
+				fabricCanvas.setHeight(imgSource.height);
+				fabricCanvas.add(fabricImage);
+			}
+
+			const pixelFun = {};
+
+			pixelFun.getPixels = function (image) {
+				const tmpCanvas = document.createElement('canvas');
+				tmpCanvas.width = image.width;
+				tmpCanvas.height = image.height;
+				const ctx = tmpCanvas.getContext('2d');
+				ctx.drawImage(image, 0, 0);
+				return ctx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
+			};
+
+			pixelFun.tmpCanvas = document.createElement('canvas');
+			pixelFun.tmpCtx = pixelFun.tmpCanvas.getContext('2d');
+
+			pixelFun.createImageData = function (width, height) {
+				return this.tmpCtx.createImageData(width, height);
+			};
+
+			pixelFun.convolute = function (pixels, weights, opaque = false) {
+				const side = Math.round(Math.sqrt(weights.length));
+				const halfSide = Math.floor(side / 2);
+				const src = pixels.data;
+				const sw = pixels.width;
+				const sh = pixels.height;
+				const w = sw, h = sh;
+				const output = pixelFun.createImageData(w, h);
+				const dst = output.data;
+				const weightSum = weights.reduce((a, b) => a + b, 0) || 1;
+
+				for (let y = 0; y < h; y++) {
+					for (let x = 0; x < w; x++) {
+						let r = 0, g = 0, b = 0, a = 0;
+						for (let cy = 0; cy < side; cy++) {
+							for (let cx = 0; cx < side; cx++) {
+								const scy = Math.min(sh - 1, Math.max(0, y + cy - halfSide));
+								const scx = Math.min(sw - 1, Math.max(0, x + cx - halfSide));
+								const srcOffset = (scy * sw + scx) * 4;
+								const wt = weights[cy * side + cx];
+								r += src[srcOffset] * wt;
+								g += src[srcOffset + 1] * wt;
+								b += src[srcOffset + 2] * wt;
+								a += src[srcOffset + 3] * wt;
+							}
+						}
+						const dstOffset = (y * w + x) * 4;
+						dst[dstOffset] = r / weightSum;
+						dst[dstOffset + 1] = g / weightSum;
+						dst[dstOffset + 2] = b / weightSum;
+						dst[dstOffset + 3] = a / weightSum + (opaque ? 255 - a / weightSum : 0);
+					}
+				}
+				return output;
+			};
+		}
+
+		// Wait for both DOM and Fabric.js to be ready
+		if (typeof fabric !== 'undefined') {
+			// Fabric is already loaded
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initializeApp);
+			} else {
+				initializeApp();
+			}
+		} else {
+			// Wait for fabric to load
+			window.addEventListener('load', function() {
+				if (typeof fabric !== 'undefined') {
+					initializeApp();
+				} else {
+					console.error('Fabric.js failed to load');
+					document.getElementById('caption').textContent = 'Error: Fabric.js failed to load';
+				}
+			});
+		}
+	</script>
+</body>
+</html>

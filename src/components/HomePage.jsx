@@ -15,6 +15,17 @@ const HomePage = ({ isVisible }) => {
                         <section className="recent-posts">
                                 <h2>Recent Posts</h2>
                                 <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Oct 30, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/basicimageadjustments.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Basic Image Adjustments
+                                    </a>
+                                    — Experiment with image pixel adjustments using basic algorithms for brightness, contrast, saturation, grayscale, sepia effects.
+                                </div>
+                                <div style={{ marginBottom: '1.5em' }}>
                                     <strong>Oct 20, 2025:</strong> &nbsp;
                                     <a
                                         href="./src/projects/basicpixelcoloration.html"

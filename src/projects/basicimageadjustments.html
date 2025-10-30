@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Adjustment Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    canvas {
+      margin: 10px;
+      border: 1px solid #ccc;
+    }
+    #canvasContainer {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .slider-group {
+      margin: 10px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Image Adjustment Tool</h2>
+
+  <div class="slider-group">
+    <label for="brightness">Brightness</label>
+    <input type="range" id="brightness" min="-200" max="200" value="0" step="10"
+           oninput="adjustImage()" ondblclick="resetSlider(this)">
+  </div>
+
+  <div class="slider-group">
+    <label for="contrast">Contrast</label>
+    <input type="range" id="contrast" min="-100" max="100" value="0" step="10"
+           oninput="adjustImage()" ondblclick="resetSlider(this)">
+  </div>
+
+  <div class="slider-group">
+    <label for="saturation">Saturation</label>
+    <input type="range" id="saturation" min="-100" max="100" value="0" step="10"
+           oninput="adjustImage()" ondblclick="resetSlider(this)">
+  </div>
+
+  <div class="slider-group">
+    <label for="grayscale">Grayscale</label>
+    <input type="range" id="grayscale" min="0" max="100" value="0" step="10"
+           oninput="adjustImage()" ondblclick="resetSlider(this)">
+  </div>
+
+  <div class="slider-group">
+    <label for="sepia">Sepia</label>
+    <input type="range" id="sepia" min="0" max="100" value="0" step="10"
+           oninput="adjustImage()" ondblclick="resetSlider(this)">
+  </div>
+
+  <div id="canvasContainer">
+    <canvas id="CanvasOR" width="700" height="300"></canvas>
+    <canvas id="CanvasOutput" width="700" height="300"></canvas>
+  </div>
+
+  <script>
+    let originalImageData = null;
+    const imageObj = new Image();
+    imageObj.crossOrigin = '';
+    imageObj.src = 'https://i.postimg.cc/15W5NyN1/42887248-10218058308392875-5570946288016424960-n-1.jpg';
+
+    imageObj.onload = function() {
+      const canvasOR = document.getElementById('CanvasOR');
+      const contextOR = canvasOR.getContext('2d');
+      const scaledHeight = imageObj.height * (700 / imageObj.width);
+      canvasOR.height = scaledHeight;
+
+      contextOR.drawImage(imageObj, 0, 0, 700, scaledHeight);
+      const imgData = contextOR.getImageData(0, 0, 700, scaledHeight);
+      originalImageData = imgData;
+      adjustImage();
+    };
+
+    function clamp(value) {
+      return Math.max(0, Math.min(255, value));
+    }
+
+    function resetSlider(slider) {
+      slider.value = slider.defaultValue;
+      adjustImage();
+    }
+
+    function adjustImage() {
+      if (!originalImageData) return;
+
+      const brightness = parseInt(document.getElementById('brightness').value);
+      const contrast = parseInt(document.getElementById('contrast').value);
+      const saturation = parseInt(document.getElementById('saturation').value);
+      const grayscale = parseInt(document.getElementById('grayscale').value) / 100;
+      const sepia = parseInt(document.getElementById('sepia').value) / 100;
+
+      const canvasBW = document.getElementById('CanvasOutput');
+      const contextBW = canvasBW.getContext('2d');
+      canvasBW.height = originalImageData.height;
+
+      const imgData = contextBW.createImageData(originalImageData);
+      const data = imgData.data;
+      const original = originalImageData.data;
+
+      const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+      const satFactor = saturation / 100;
+
+      for (let i = 0; i < original.length; i += 4) {
+        let r = original[i];
+        let g = original[i + 1];
+        let b = original[i + 2];
+
+        // Brightness + Contrast
+        r = contrastFactor * (r - 128) + 128 + brightness;
+        g = contrastFactor * (g - 128) + 128 + brightness;
+        b = contrastFactor * (b - 128) + 128 + brightness;
+
+        r = clamp(r);
+        g = clamp(g);
+        b = clamp(b);
+
+        // Grayscale
+        const gray = r * 0.3 + g * 0.59 + b * 0.11;
+        r = r * (1 - grayscale) + gray * grayscale;
+        g = g * (1 - grayscale) + gray * grayscale;
+        b = b * (1 - grayscale) + gray * grayscale;
+
+        // Sepia
+        const sr = r * (1 - sepia) + (r * 0.393 + g * 0.769 + b * 0.189) * sepia;
+        const sg = g * (1 - sepia) + (r * 0.349 + g * 0.686 + b * 0.168) * sepia;
+        const sb = b * (1 - sepia) + (r * 0.272 + g * 0.534 + b * 0.131) * sepia;
+        r = clamp(sr);
+        g = clamp(sg);
+        b = clamp(sb);
+
+        // Saturation
+        const avg = (r + g + b) / 3;
+        r = r + (r - avg) * satFactor;
+        g = g + (g - avg) * satFactor;
+        b = b + (b - avg) * satFactor;
+
+        data[i]     = clamp(r);
+        data[i + 1] = clamp(g);
+        data[i + 2] = clamp(b);
+        data[i + 3] = original[i + 3]; // alpha
+      }
+
+      contextBW.putImageData(imgData, 0, 0);
+    }
+  </script>
+
+</body>
+</html>

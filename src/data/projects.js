@@ -5,12 +5,46 @@
 
 const PROJECTS_DATA = {
     categories: {
-         'snippets-algorithms': {
+        'snippets-algorithms': {
             id: 'snippets-algorithms',
             title: 'Snippets & Algorithms',
             description: 'Code snippets, algorithm implementations, and developer utilities.',
             icon: '',
             projects: [
+                {
+                    id: 'basicimageadjustments',
+                    slug: 'basicimageadjustments',
+                    title: 'Basic Image Adjustments',
+                    subtitle: 'Brightness, Contrast, Saturation, Grayscale, Sepia',
+                    description: 'A web-based tool for interactively adjusting image brightness, contrast, saturation, grayscale, and sepia using HTML5 Canvas.',
+                    status: 'completed',
+                    date: '2025-10-30',
+                    technologies: ['HTML5', 'JavaScript', 'Canvas API', 'Image Processing'],
+                    overview: 'Lets users experiment with real-time image adjustments (brightness, contrast, saturation, grayscale, sepia) using sliders. Demonstrates pixel-level manipulation and visual feedback.',
+                    problem: 'How to adjust basic image properties by altering pixel data',
+                    solution: 'Uses Canvas ImageData and custom algorithms to apply adjustments in real time as the user moves sliders.',
+                    challenges: [
+                        'Efficiently updating large images in real time',
+                        'Combining multiple effects (brightness, contrast, etc.) in a single pass',
+                        'Ensuring UI responsiveness and smooth feedback',
+                        'Handling image scaling and aspect ratio'
+                    ],
+                    learnings: [
+                        'Canvas ImageData manipulation',
+                        'Color adjustment algorithms',
+                        'User interface design for image tools',
+                        'Performance optimization for real-time effects'
+                    ],
+                    futureImprovements: [
+                        'Add support for uploading custom images',
+                        'Implement reset and undo functionality',
+                        'Add more adjustment types (hue, blur, etc.)',
+                        'Support for exporting adjusted images'
+                    ],
+                    github: '',
+                    demo: './src/projects/basicimageadjustments.html',
+                    featured: true
+                },
                 {
                     id: 'basicpixelcoloration',
                     slug: 'basicpixelcoloration',
@@ -79,7 +113,7 @@ const PROJECTS_DATA = {
                     demo: './src/projects/pixcular.html',
                     featured: false
                 },
-                 {
+                {
                     id: 'spirograph-generator',
                     slug: 'spirograph-generator',
                     title: 'Spirograph Generator',
@@ -111,8 +145,8 @@ const PROJECTS_DATA = {
                     featured: false
                 },
                 {
-                    id: 'unsharp-mask',
-                    slug: 'unsharp-mask',
+                    id: 'unsharpmask',
+                    slug: 'unsharpmask',
                     title: 'Unsharp Mask Image Sharpening',
                     subtitle: 'Canvas API + Fabric.js',
                     description: 'An interactive image sharpening tool using the unsharp masking technique with Gaussian blur convolution.',
@@ -143,7 +177,7 @@ const PROJECTS_DATA = {
                         'Add export functionality for sharpened images'
                     ],
                     github: '',
-                    demo: './src/projects/unsharp-mask.html',
+                    demo: './src/projects/unsharpmask.html',
                     featured: false
                 },
                 {
@@ -209,7 +243,6 @@ const PROJECTS_DATA = {
                     featured: false
                 },
                 
-                // Add more snippets/algorithm projects here
             ]
         },
         'ai-ml': {
@@ -249,7 +282,6 @@ const PROJECTS_DATA = {
                     demo: '',
                     featured: false
                 }
-                // Add more AI/ML projects here
             ]
         },
         'data-engineering': {
@@ -289,7 +321,6 @@ const PROJECTS_DATA = {
                     demo: '',
                     featured: false
                 }
-                // Add more data engineering projects here
             ]
         }
     }
