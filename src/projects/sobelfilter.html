@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sobel Filter Side-by-Side</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background: #f8f8f8;
+    }
+    h4, h5 {
+      margin: 10px 0;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+      background: #fff;
+    }
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+    .slider-group {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    label {
+      font-weight: 600;
+    }
+    .canvas-wrapper {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <h4>Original and Sobel Filtered Image</h4>
+  <div class="canvas-wrapper">
+    <div>
+      <h5>Original</h5>
+      <canvas id="originalCanvas" width="640" height="308"></canvas>
+    </div>
+    <div>
+      <h5>Filtered</h5>
+      <canvas id="filteredCanvas" width="640" height="308"></canvas>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="slider-group">
+      <label for="verticalSlider">Vertical Strength:</label>
+      <input type="range" id="verticalSlider" min="0.5" max="3" step="0.1" value="1">
+    </div>
+    <div class="slider-group">
+      <label for="horizontalSlider">Horizontal Strength:</label>
+      <input type="range" id="horizontalSlider" min="0.5" max="3" step="0.1" value="1">
+    </div>
+  </div>
+
+  <script>
+    const originalCanvas = document.getElementById('originalCanvas');
+    const filteredCanvas = document.getElementById('filteredCanvas');
+    const originalCtx = originalCanvas.getContext('2d');
+    const filteredCtx = filteredCanvas.getContext('2d');
+    const imageURL = 'images/user-image.jpg';
+
+    let baseImage = null;
+    const drawState = {
+      width: originalCanvas.width,
+      height: originalCanvas.height,
+      offsetX: 0,
+      offsetY: 0
+    };
+
+    const verticalKernelBase = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+    const horizontalKernelBase = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+    function drawOriginalImage(img) {
+      const scale = Math.min(originalCanvas.width / img.width, originalCanvas.height / img.height);
+      const drawWidth = Math.max(1, Math.round(img.width * scale));
+      const drawHeight = Math.max(1, Math.round(img.height * scale));
+      const offsetX = Math.floor((originalCanvas.width - drawWidth) / 2);
+      const offsetY = Math.floor((originalCanvas.height - drawHeight) / 2);
+
+      drawState.width = drawWidth;
+      drawState.height = drawHeight;
+      drawState.offsetX = offsetX;
+      drawState.offsetY = offsetY;
+
+      originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+      originalCtx.fillStyle = '#ffffff';
+      originalCtx.fillRect(0, 0, originalCanvas.width, originalCanvas.height);
+      originalCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+    }
+
+    function applySobelToImageData(imageData, vStrength, hStrength) {
+      const { width, height, data } = imageData;
+      
+      // Step 1: Convert to grayscale using ITU-R BT.709 weights
+      const gray = new Float32Array(width * height);
+      for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        gray[j] = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      }
+
+      // Step 2: Apply strength multipliers to kernels
+      const verticalKernel = verticalKernelBase.map(v => v * vStrength);
+      const horizontalKernel = horizontalKernelBase.map(v => v * hStrength);
+
+      // Step 3: Helper function for edge clamping
+      const sample = (x, y) => {
+        const clampedX = Math.min(width - 1, Math.max(0, x));
+        const clampedY = Math.min(height - 1, Math.max(0, y));
+        return gray[clampedY * width + clampedX];
+      };
+
+      // Step 4: Apply convolution and calculate magnitude
+      const magnitude = new Float32Array(width * height);
+      let maxMagnitude = 0;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let gx = 0;
+          let gy = 0;
+          let k = 0;
+          
+          // Convolve with both kernels
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++, k++) {
+              const value = sample(x + kx, y + ky);
+              gx += value * verticalKernel[k];
+              gy += value * horizontalKernel[k];
+            }
+          }
+          
+          // Calculate gradient magnitude: sqrt(Gx² + Gy²)
+          const mag = Math.sqrt(gx * gx + gy * gy);
+          const index = y * width + x;
+          magnitude[index] = mag;
+          maxMagnitude = Math.max(maxMagnitude, mag);
+        }
+      }
+
+      // Step 5: Normalize magnitude and create grayscale output
+      const safeMaxMag = maxMagnitude || 1;
+      const result = filteredCtx.createImageData(width, height);
+      
+      for (let i = 0, j = 0; i < result.data.length; i += 4, j++) {
+        // Normalize magnitude to 0-255 range
+        const normalized = Math.min(255, (magnitude[j] / safeMaxMag) * 255);
+        
+        // Standard Sobel output: grayscale (R=G=B)
+        result.data[i] = normalized;      // R
+        result.data[i + 1] = normalized;  // G
+        result.data[i + 2] = normalized;  // B
+        result.data[i + 3] = 255;         // A (fully opaque)
+      }
+
+      return result;
+    }
+
+    function updateFilteredImage() {
+      if (!baseImage) {
+        return;
+      }
+
+      const vStrength = parseFloat(document.getElementById('verticalSlider').value);
+      const hStrength = parseFloat(document.getElementById('horizontalSlider').value);
+
+      const srcData = originalCtx.getImageData(drawState.offsetX, drawState.offsetY, drawState.width, drawState.height);
+      const sobelData = applySobelToImageData(srcData, vStrength, hStrength);
+
+      filteredCtx.clearRect(0, 0, filteredCanvas.width, filteredCanvas.height);
+      filteredCtx.fillStyle = '#ffffff';
+      filteredCtx.fillRect(0, 0, filteredCanvas.width, filteredCanvas.height);
+      filteredCtx.putImageData(sobelData, drawState.offsetX, drawState.offsetY);
+    }
+
+    function loadImage() {
+      const img = new Image();
+      img.onload = () => {
+        baseImage = img;
+        drawOriginalImage(img);
+        updateFilteredImage();
+      };
+      img.onerror = (err) => {
+        console.error('Failed to load base image for Sobel filter demo:', err);
+      };
+      img.src = imageURL;
+    }
+
+    document.getElementById('verticalSlider').addEventListener('input', updateFilteredImage);
+    document.getElementById('horizontalSlider').addEventListener('input', updateFilteredImage);
+
+    loadImage();
+  </script>
+</body>
+</html>

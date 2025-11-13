@@ -15,6 +15,17 @@ const HomePage = ({ isVisible }) => {
                         <section className="recent-posts">
                                 <h2>Recent Posts</h2>
                                 <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Nov 13, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/sobelfilter.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Sobel Filter Side-by-Side
+                                    </a>
+                                    — interactive Sobel edge detection demo showing original and filtered canvases side-by-side with adjustable vertical and horizontal strengths.
+                                </div>
+                                <div style={{ marginBottom: '1.5em' }}>
                                     <strong>Oct 30, 2025:</strong> &nbsp;
                                     <a
                                         href="./src/projects/basicimageadjustments.html"

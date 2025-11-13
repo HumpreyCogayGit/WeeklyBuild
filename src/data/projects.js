@@ -12,6 +12,40 @@ const PROJECTS_DATA = {
             icon: '',
             projects: [
                 {
+                    id: 'sobel-filter-side-by-side',
+                    slug: 'sobel-filter-side-by-side',
+                    title: 'Sobel Filter Side-by-Side',
+                    subtitle: 'Canvas Edge Detection with Adjustable Kernels',
+                    description: 'Compare original and Sobel-filtered images side-by-side with adjustable horizontal and vertical convolution strengths.',
+                    status: 'completed',
+                    date: '2025-11-13',
+                    technologies: ['HTML5', 'JavaScript', 'Canvas API', 'Image Processing'],
+                    overview: 'Loads an image into paired canvases and applies Sobel edge detection with sliders that control horizontal and vertical kernel strengths for live comparisons.',
+                    problem: 'How can we demonstrate interactive edge detection that highlights how Sobel kernels respond to horizontal and vertical gradients?',
+                    solution: 'Implemented paired HTML5 canvas elements with custom Sobel convolution that recomputes results whenever slider inputs change, visualising gradient magnitude in real time.',
+                    challenges: [
+                        'Implementing Sobel convolution using typed arrays for performance',
+                        'Keeping both canvases synchronised while updating filter output',
+                        'Avoiding cross-origin image issues when loading sample assets',
+                        'Providing intuitive controls for horizontal versus vertical emphasis'
+                    ],
+                    learnings: [
+                        'Practical image processing with Sobel kernels',
+                        'Fabric.js canvas management and layering',
+                        'Typed array manipulation for pixel-level effects',
+                        'Designing interactive visualization controls'
+                    ],
+                    futureImprovements: [
+                        'Add custom image uploads for user experimentation',
+                        'Overlay gradient magnitude heatmaps for clarity',
+                        'Include additional edge detection kernels (Prewitt, Scharr)',
+                        'Export filtered results as downloadable images'
+                    ],
+                    github: '',
+                    demo: './src/projects/sobelfilter.html',
+                    featured: true
+                },
+                {
                     id: 'basicimageadjustments',
                     slug: 'basicimageadjustments',
                     title: 'Basic Image Adjustments',
