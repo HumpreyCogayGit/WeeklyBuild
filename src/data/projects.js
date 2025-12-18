@@ -12,6 +12,45 @@ const PROJECTS_DATA = {
             icon: '',
             projects: [
                 {
+                    id: 'image-effects',
+                    slug: 'image-effects',
+                    title: 'Image Effects Studio',
+                    subtitle: 'Advanced Filtering & Effects with Canvas',
+                    description: 'A comprehensive image filtering tool featuring 18+ effects including edge detection, artistic filters, blur effects, and creative transformations.',
+                    status: 'completed',
+                    date: '2025-12-15',
+                    technologies: ['HTML5', 'JavaScript', 'Canvas API', 'Fabric.js', 'Image Processing', 'Convolution Filters'],
+                    overview: 'A powerful side-by-side image filtering application that demonstrates advanced image processing techniques. Features include edge detection (Sobel, Prewitt, Laplacian), artistic effects (Oil Paint, Cartoon), blur filters (Gaussian, Motion), and creative transformations (Halftone, Glitch, Posterize).',
+                    problem: 'How can we create a comprehensive image filtering tool that demonstrates multiple image processing algorithms with real-time parameter adjustment and visual comparison?',
+                    solution: 'Built a dual-canvas interface using HTML5 Canvas API and Fabric.js, implementing convolution kernels for edge detection, custom algorithms for artistic effects, and optimized pixel manipulation for real-time performance. Includes configurable sliders for each filter type.',
+                    challenges: [
+                        'Implementing efficient convolution operations for multiple kernel types',
+                        'Optimizing performance for real-time filtering on high-resolution images',
+                        'Creating intuitive UI that adapts controls based on selected filter',
+                        'Managing memory efficiently across multiple filter operations',
+                        'Balancing filter quality with computational performance'
+                    ],
+                    learnings: [
+                        'Advanced convolution mathematics and kernel design',
+                        'Image processing algorithms (edge detection, morphological operations)',
+                        'Performance optimization techniques for pixel manipulation',
+                        'Dynamic UI control management based on context',
+                        'Separable filter implementations for efficiency',
+                        'Artistic filter approximations (oil painting, cartoon effects)'
+                    ],
+                    futureImprovements: [
+                        'Add filter presets and save/load functionality',
+                        'Implement filter chaining to combine multiple effects',
+                        'Add histogram visualization for better filter tuning',
+                        'Support for batch processing multiple images',
+                        'Export processed images with metadata',
+                        'Add more advanced filters (bilateral, guided, anisotropic diffusion)'
+                    ],
+                    github: '',
+                    demo: './src/projects/imageEffects.html',
+                    featured: true
+                },
+                {
                     id: 'sobel-filter-side-by-side',
                     slug: 'sobel-filter-side-by-side',
                     title: 'Sobel Filter Side-by-Side',
@@ -43,8 +82,9 @@ const PROJECTS_DATA = {
                     ],
                     github: '',
                     demo: './src/projects/sobelfilter.html',
-                    featured: true
+                    featured: false
                 },
+                
                 {
                     id: 'basicimageadjustments',
                     slug: 'basicimageadjustments',
@@ -77,7 +117,7 @@ const PROJECTS_DATA = {
                     ],
                     github: '',
                     demo: './src/projects/basicimageadjustments.html',
-                    featured: true
+                    featured: false
                 },
                 {
                     id: 'basicpixelcoloration',
@@ -111,7 +151,7 @@ const PROJECTS_DATA = {
                     ],
                     github: '',
                     demo: './src/projects/basicpixelcoloration.html',
-                    featured: true
+                    featured: false
                 },
                 {
                     id: 'pixcular',

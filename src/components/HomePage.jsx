@@ -15,6 +15,17 @@ const HomePage = ({ isVisible }) => {
                         <section className="recent-posts">
                                 <h2>Recent Posts</h2>
                                 <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>Dec 15, 2025:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/imageEffects.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Image Effects Studio
+                                    </a>
+                                    — A comprehensive image filtering tool featuring 18+ effects including edge detection (Sobel, Prewitt, Laplacian), artistic filters (Oil Paint, Cartoon), blur effects (Gaussian, Motion Blur), and creative transformations (Halftone, Glitch, Posterize) with real-time parameter adjustment.
+                                </div>
+                                <div style={{ marginBottom: '1.5em' }}>
                                     <strong>Nov 13, 2025:</strong> &nbsp;
                                     <a
                                         href="./src/projects/sobelfilter.html"

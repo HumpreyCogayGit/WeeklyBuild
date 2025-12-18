@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Image Filters</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.5.0/fabric.min.js"></script>
+  <style>
+    body { font-family: system-ui,Segoe UI,Roboto,Helvetica,Arial; text-align:center; margin:16px; }
+    .canvas-wrapper { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+    canvas { border:1px solid #ccc; background:#fff; }
+    .controls { margin-top:16px; display:flex; justify-content:center; gap:12px; align-items:center; flex-wrap:wrap; }
+    .slider-group { display:none; margin-left:8px; }
+    label { margin-right:6px; }
+    select, input[type=range] { vertical-align:middle; }
+    h3 { margin:8px 0 12px 0; }
+    .col { display:flex; flex-direction:column; align-items:center; }
+    small { color:#666; display:block; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <h3>Image Filters</h3>
+
+  <div class="controls">
+    <label for="filterSelect">Filter</label>
+    <select id="filterSelect" style="min-width:220px;">
+      <option value="none">None</option>
+      <option value="sobel">Sobel Edge</option>
+      <option value="prewitt">Prewitt Edge</option>
+      <option value="laplacian">Laplacian</option>
+      <option value="posterize">Posterize</option>
+      <option value="solarize">Solarize</option>
+      <option value="oilpaint">Oil Paint</option>
+      <option value="cartoon">Cartoon</option>
+      <option value="emboss">Emboss</option>
+      <option value="sharpen">Sharpen</option>
+      <option value="gaussian">Gaussian Blur</option>
+      <option value="motionblur">Motion Blur</option>
+      <option value="halftone">Halftone Dots</option>
+      <option value="glitch">Glitch</option>
+      <option value="noise">Noise Overlay</option>
+      <option value="colormap">Color Mapping</option>
+      <option value="morphology">Morphological (Dilate/Erode)</option>
+      <option value="threshold">Threshold</option>
+      <option value="freqfilter">Frequency (low/high sim)</option>
+    </select>
+
+    <div id="slider1" class="slider-group">
+      <label id="label1" for="range1">Value</label>
+      <input type="range" id="range1" min="0" max="255" value="128">
+    </div>
+
+    <div id="slider2" class="slider-group">
+      <label id="label2" for="range2">Strength</label>
+      <input type="range" id="range2" min="0" max="5" step="0.1" value="1">
+    </div>
+
+    <div id="slider3" class="slider-group">
+      <label id="label3" for="range3">Radius</label>
+      <input type="range" id="range3" min="1" max="15" step="1" value="3">
+    </div>
+
+    <div id="slider4" class="slider-group">
+      <label id="label4" for="range4">Direction</label>
+      <input type="range" id="range4" min="0" max="360" step="1" value="0">
+    </div>
+
+    <div style="margin-left:8px;">
+      <input type="file" id="fileInput" accept="image/*">
+      <small>or drop image into page</small>
+    </div>
+  </div>
+
+  <div class="canvas-wrapper">
+    <div class="col">
+      <h5>Original</h5>
+      <canvas id="originalCanvas" width="700" height="700"></canvas>
+    </div>
+    <div class="col">
+      <h5>Filtered</h5>
+      <canvas id="filteredCanvas" width="700" height="700"></canvas>
+    </div>
+  </div>
+
+  <script>
+  // ====== Utilities ======
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function copyImageData(ctx, src) {
+    const out = ctx.createImageData(src.width, src.height);
+    out.data.set(src.data);
+    return out;
+  }
+
+  function createCanvas(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
+
+  // Convolution helper
+  function convolute(imageData, kernel, opaque=true) {
+    const src = imageData.data;
+    const w = imageData.width, h = imageData.height;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    const side = Math.round(Math.sqrt(kernel.length));
+    const half = Math.floor(side/2);
+    for (let y=0;y<h;y++){
+      for (let x=0;x<w;x++){
+        let r=0,g=0,b=0,a=0;
+        for (let ky=0;ky<side;ky++){
+          for (let kx=0;kx<side;kx++){
+            const scy = clamp(y + ky - half, 0, h-1);
+            const scx = clamp(x + kx - half, 0, w-1);
+            const srcOff = (scy*w + scx)*4;
+            const wt = kernel[ky*side + kx];
+            r += src[srcOff]*wt;
+            g += src[srcOff+1]*wt;
+            b += src[srcOff+2]*wt;
+            a += src[srcOff+3]*wt;
+          }
+        }
+        const off = (y*w+x)*4;
+        dst[off] = r;
+        dst[off+1] = g;
+        dst[off+2] = b;
+        dst[off+3] = opaque ? 255 : a;
+      }
+    }
+    return out;
+  }
+
+  function grayscaleImageData(imgData) {
+    const outArr = new Uint8ClampedArray(imgData.data.length);
+    for (let i=0;i<imgData.data.length;i+=4){
+      const r = imgData.data[i], g = imgData.data[i+1], b = imgData.data[i+2];
+      const v = 0.2126*r + 0.7152*g + 0.0722*b;
+      outArr[i]=outArr[i+1]=outArr[i+2]=v; outArr[i+3]=255;
+    }
+    return new ImageData(outArr, imgData.width, imgData.height);
+  }
+
+  function applyToCanvas(canvasOut, imageData) {
+    const ctx = canvasOut.getContext('2d');
+    canvasOut.width = imageData.width;
+    canvasOut.height = imageData.height;
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  // Fast box blur (separable)
+  function boxBlur(imageData, radius) {
+    if (radius < 1) return copyImageData(document.createElement('canvas').getContext('2d'), imageData);
+    const w = imageData.width, h = imageData.height;
+    const src = imageData.data;
+    const tmp = new Uint8ClampedArray(src.length);
+    const out = new Uint8ClampedArray(src.length);
+
+    // horizontal pass
+    const rad = radius|0;
+    const len = w;
+    for (let y=0;y<h;y++){
+      let rsum=0, gsum=0, bsum=0, asum=0;
+      for (let x= -rad; x <= rad; x++){
+        const xcl = clamp(x,0,len-1);
+        const off = (y*w + xcl)*4;
+        rsum += src[off]; gsum += src[off+1]; bsum += src[off+2]; asum += src[off+3];
+      }
+      for (let x=0;x<w;x++){
+        const off = (y*w + x)*4;
+        tmp[off] = rsum / (2*rad+1);
+        tmp[off+1] = gsum / (2*rad+1);
+        tmp[off+2] = bsum / (2*rad+1);
+        tmp[off+3] = asum / (2*rad+1);
+        const removeX = x - rad;
+        const addX = x + rad + 1;
+        const rem = clamp(removeX,0,len-1);
+        const add = clamp(addX,0,len-1);
+        const roff = (y*w + rem)*4;
+        const aoff = (y*w + add)*4;
+        rsum += src[aoff] - src[roff];
+        gsum += src[aoff+1] - src[roff+1];
+        bsum += src[aoff+2] - src[roff+2];
+        asum += src[aoff+3] - src[roff+3];
+      }
+    }
+
+    // vertical pass
+    for (let x=0;x<w;x++){
+      let rsum=0, gsum=0, bsum=0, asum=0;
+      for (let y=-rad;y<=rad;y++){
+        const ycl = clamp(y,0,h-1);
+        const off = (ycl*w + x)*4;
+        rsum += tmp[off]; gsum += tmp[off+1]; bsum += tmp[off+2]; asum += tmp[off+3];
+      }
+      for (let y=0;y<h;y++){
+        const off = (y*w + x)*4;
+        out[off] = rsum / (2*rad+1);
+        out[off+1] = gsum / (2*rad+1);
+        out[off+2] = bsum / (2*rad+1);
+        out[off+3] = asum / (2*rad+1);
+        const removeY = y - rad;
+        const addY = y + rad + 1;
+        const roff = (clamp(removeY,0,h-1)*w + x)*4;
+        const aoff = (clamp(addY,0,h-1)*w + x)*4;
+        rsum += tmp[aoff] - tmp[roff];
+        gsum += tmp[aoff+1] - tmp[roff+1];
+        bsum += tmp[aoff+2] - tmp[roff+2];
+        asum += tmp[aoff+3] - tmp[roff+3];
+      }
+    }
+    return new ImageData(out, w, h);
+  }
+
+  // ====== UI & wiring ======
+  const origCanvas = document.getElementById('originalCanvas');
+  const filtCanvas = document.getElementById('filteredCanvas');
+  const filterSelect = document.getElementById('filterSelect');
+  const s1 = document.getElementById('slider1'), r1 = document.getElementById('range1'), l1 = document.getElementById('label1');
+  const s2 = document.getElementById('slider2'), r2 = document.getElementById('range2'), l2 = document.getElementById('label2');
+  const s3 = document.getElementById('slider3'), r3 = document.getElementById('range3'), l3 = document.getElementById('label3');
+  const s4 = document.getElementById('slider4'), r4 = document.getElementById('range4'), l4 = document.getElementById('label4');
+  const fileInput = document.getElementById('fileInput');
+
+  let baseImageData = null;
+
+  // set your local filename here or use file input to load
+  let imageURL = "images/user-image.jpg";
+ 
+  function hideAllSliders(){
+    document.querySelectorAll('.slider-group').forEach(s=>s.style.display='none');
+  }
+
+  function configureSlidersFor(filter){
+    hideAllSliders();
+    if (filter === 'posterize') {
+      s1.style.display='inline-block'; l1.textContent='Levels'; r1.min=2; r1.max=20; r1.step=1; r1.value=6;
+    } else if (filter === 'solarize') {
+      s1.style.display='inline-block'; l1.textContent='Threshold'; r1.min=0; r1.max=255; r1.step=1; r1.value=128;
+    } else if (filter === 'threshold') {
+      s1.style.display='inline-block'; l1.textContent='Threshold'; r1.min=0; r1.max=255; r1.step=1; r1.value=128;
+    } else if (filter === 'noise') {
+      s1.style.display='inline-block'; l1.textContent='Amount'; r1.min=0; r1.max=150; r1.step=1; r1.value=30;
+    } else if (filter === 'emboss') {
+      s2.style.display='inline-block'; l2.textContent='Strength'; r2.min=0; r2.max=3; r2.step=0.1; r2.value=1;
+    } else if (filter === 'sobel' || filter==='prewitt' || filter==='laplacian' || filter==='sharpen') {
+      s2.style.display='inline-block'; l2.textContent='Strength'; r2.min=0; r2.max=5; r2.step=0.1; r2.value=1;
+    } else if (filter === 'gaussian' || filter==='oilpaint') {
+      s3.style.display='inline-block'; l3.textContent='Radius'; r3.min=1; r3.max=12; r3.step=1; r3.value=3;
+    } else if (filter === 'motionblur') {
+      s3.style.display='inline-block'; l3.textContent='Length'; r3.min=1; r3.max=40; r3.step=1; r3.value=12;
+      s4.style.display='inline-block'; l4.textContent='Angle'; r4.min=0; r4.max=360; r4.step=1; r4.value=0;
+    } else if (filter === 'halftone') {
+      s3.style.display='inline-block'; l3.textContent='Size'; r3.min=2; r3.max=24; r3.step=1; r3.value=6;
+    } else if (filter === 'glitch') {
+      s1.style.display='inline-block'; l1.textContent='Shift px'; r1.min=1; r1.max=200; r1.step=1; r1.value=30;
+    } else if (filter === 'colormap') {
+      s1.style.display='inline-block'; l1.textContent='Map (0-5)'; r1.min=0; r1.max=5; r1.step=1; r1.value=1;
+    } else if (filter === 'morphology') {
+      s3.style.display='inline-block'; l3.textContent='Radius'; r3.min=1; r3.max=10; r3.step=1; r3.value=1;
+      s2.style.display='inline-block'; l2.textContent='Op (0=dilate,1=erode)'; r2.min=0; r2.max=1; r2.step=1; r2.value=0;
+    } else if (filter === 'cartoon') {
+      s3.style.display='inline-block'; l3.textContent='Bilateral radius'; r3.min=1; r3.max=8; r3.step=1; r3.value=3;
+      s1.style.display='inline-block'; l1.textContent='Posterize levels'; r1.min=2; r1.max=12; r1.step=1; r1.value=6;
+    } else if (filter === 'oilpaint') {
+      s3.style.display='inline-block'; l3.textContent='Radius'; r3.min=1; r3.max=8; r3.step=1; r3.value=3;
+      s1.style.display='inline-block'; l1.textContent='Intensity bins'; r1.min=4; r1.max=64; r1.step=1; r1.value=32;
+    } else {
+      // none
+    }
+  }
+
+  // ====== Filters Implementation ======
+
+  function posterizePixels(imgData, levels) {
+    const d = imgData.data;
+    const step = 256/levels;
+    for (let i=0;i<d.length;i+=4){
+      d[i] = Math.floor(d[i]/step)*step;
+      d[i+1] = Math.floor(d[i+1]/step)*step;
+      d[i+2] = Math.floor(d[i+2]/step)*step;
+    }
+    return imgData;
+  }
+
+  function solarizePixels(imgData, thresh) {
+    const d = imgData.data;
+    for (let i=0;i<d.length;i+=4){
+      d[i] = d[i] > thresh ? 255 - d[i] : d[i];
+      d[i+1] = d[i+1] > thresh ? 255 - d[i+1] : d[i+1];
+      d[i+2] = d[i+2] > thresh ? 255 - d[i+2] : d[i+2];
+    }
+    return imgData;
+  }
+
+  function thresholdPixels(imgData, thresh) {
+    const d = imgData.data;
+    for (let i=0;i<d.length;i+=4){
+      const v = 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2];
+      const val = v >= thresh ? 255 : 0;
+      d[i]=d[i+1]=d[i+2]=val;
+    }
+    return imgData;
+  }
+
+  function noisePixels(imgData, amount) {
+    const d = imgData.data;
+    for (let i=0;i<d.length;i+=4){
+      const n = (Math.random()-0.5)*amount;
+      d[i] = clamp(d[i]+n,0,255); d[i+1] = clamp(d[i+1]+n,0,255); d[i+2] = clamp(d[i+2]+n,0,255);
+    }
+    return imgData;
+  }
+
+  function embossPixels(imgData, strength=1) {
+    const w = imgData.width, h = imgData.height;
+    const src = imgData.data;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    for (let y=0;y<h;y++){
+      for (let x=0;x<w;x++){
+        const i = (y*w + x)*4;
+        const i2 = (clamp(y+1,0,h-1)*w + x)*4;
+        dst[i] = clamp(128 + (src[i] - src[i2]) * strength, 0, 255);
+        dst[i+1] = clamp(128 + (src[i+1] - src[i2+1]) * strength, 0, 255);
+        dst[i+2] = clamp(128 + (src[i+2] - src[i2+2]) * strength, 0, 255);
+        dst[i+3] = 255;
+      }
+    }
+    return out;
+  }
+
+  function convoluteKernel(imgData, kernel, strength=1) {
+    return convolute(imgData, kernel.map(v=>v*strength));
+  }
+
+  function sobelPixels(imgData, strength=1, kernelType='sobel') {
+    const gray = grayscaleImageData(imgData).data;
+    const w = imgData.width, h = imgData.height;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    let kx, ky;
+    if (kernelType==='sobel') {
+      kx = [-1,0,1,-2,0,2,-1,0,1];
+      ky = [-1,-2,-1,0,0,0,1,2,1];
+    } else if (kernelType==='prewitt') {
+      kx = [-1,0,1,-1,0,1,-1,0,1];
+      ky = [-1,-1,-1,0,0,0,1,1,1];
+    } else if (kernelType==='laplacian') {
+      kx = [0,1,0,1,-4,1,0,1,0];
+      ky = kx;
+    }
+    for (let y=1;y<h-1;y++){
+      for (let x=1;x<w-1;x++){
+        let gx=0, gy=0;
+        for (let ky_i=-1; ky_i<=1; ky_i++){
+          for (let kx_i=-1; kx_i<=1; kx_i++){
+            const px = ((y+ky_i)*w + (x+kx_i))*4;
+            const val = gray[px];
+            const wx = kx[(ky_i+1)*3 + (kx_i+1)];
+            const wy = ky[(ky_i+1)*3 + (kx_i+1)];
+            gx += val * wx;
+            gy += val * wy;
+          }
+        }
+        const mag = clamp(Math.sqrt(gx*gx + gy*gy) * strength, 0, 255);
+        const off = (y*w + x)*4;
+        dst[off] = dst[off+1] = dst[off+2] = mag;
+        dst[off+3] = 255;
+      }
+    }
+    return out;
+  }
+
+  function sharpenPixels(imgData, amount=1) {
+    const radius = 1;
+    const blurred = boxBlur(imgData, radius);
+    const out = copyImageData(document.createElement('canvas').getContext('2d'), imgData);
+    const src = imgData.data, b = blurred.data, dst = out.data;
+    for (let i=0;i<src.length;i+=4){
+      dst[i] = clamp(src[i] + (src[i] - b[i]) * amount, 0, 255);
+      dst[i+1] = clamp(src[i+1] + (src[i+1] - b[i+1]) * amount, 0, 255);
+      dst[i+2] = clamp(src[i+2] + (src[i+2] - b[i+2]) * amount, 0, 255);
+      dst[i+3] = 255;
+    }
+    return out;
+  }
+
+  function gaussianPixels(imgData, radius=3) {
+    return boxBlur(imgData, Math.max(1, Math.round(radius)));
+  }
+
+  function motionBlurPixels(imgData, length=12, angleDeg=0) {
+    const w = imgData.width, h = imgData.height;
+    const src = imgData.data;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    const angle = angleDeg * Math.PI/180;
+    const dx = Math.cos(angle), dy = Math.sin(angle);
+    for (let y=0;y<h;y++){
+      for (let x=0;x<w;x++){
+        let r=0,g=0,b=0,a=0, count=0;
+        for (let i=0;i<length;i++){
+          const sx = Math.round(x + (i - length/2)*dx);
+          const sy = Math.round(y + (i - length/2)*dy);
+          if (sx>=0 && sx<w && sy>=0 && sy<h){
+            const off = (sy*w + sx)*4;
+            r += src[off]; g += src[off+1]; b += src[off+2]; a += src[off+3];
+            count++;
+          }
+        }
+        const off2 = (y*w + x)*4;
+        dst[off2] = count? r/count:0; dst[off2+1] = count? g/count:0; dst[off2+2] = count? b/count:0; dst[off2+3] = 255;
+      }
+    }
+    return out;
+  }
+
+  function halftonePixels(imgData, size=6) {
+    const w = imgData.width, h = imgData.height;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    for (let y=0;y<h;y++){
+      for (let x=0;x<w;x++){
+        const cx = Math.floor(x/size)*size + size/2;
+        const cy = Math.floor(y/size)*size + size/2;
+        const sx = clamp(cx,0,w-1), sy = clamp(cy,0,h-1);
+        const off = (sy*w + sx)*4;
+        const r = imgData.data[off], g=imgData.data[off+1], b=imgData.data[off+2];
+        const v = Math.round((r+g+b)/3);
+        const radius = (1 - v/255) * (size/2);
+        const dx = x - cx, dy = y - cy;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        const shade = d <= radius ? 0 : 255;
+        const idx = (y*w + x)*4;
+        dst[idx] = dst[idx+1] = dst[idx+2] = shade;
+        dst[idx+3] = 255;
+      }
+    }
+    return out;
+  }
+
+  function glitchPixels(imgData, shift=30) {
+    const w = imgData.width, h = imgData.height;
+    const src = imgData.data;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    dst.set(src);
+    const bands = 6;
+    for (let b=0;b<bands;b++){
+      const y0 = Math.floor(Math.random()*h);
+      const bandH = Math.floor(Math.random()*(h/6))+1;
+      const dx = Math.floor((Math.random()*2-1)*shift);
+      for (let y=y0;y<Math.min(h,y0+bandH);y++){
+        for (let x=0;x<w;x++){
+          const sx = clamp(x + dx,0,w-1);
+          const so = (y*w + sx)*4;
+          const to = (y*w + x)*4;
+          dst[to] = src[so];
+          dst[to+1] = src[((y*w + clamp(x + Math.floor(Math.random()*shift/2),0,w-1))*4)+1];
+          dst[to+2] = src[((y*w + clamp(x + Math.floor(Math.random()*shift/3),0,w-1))*4)+2];
+        }
+      }
+    }
+    return out;
+  }
+
+  function colorMapPixels(imgData, mapIndex=1) {
+    const palettes = [
+      v=>[v,v,v],
+      v=>[v, Math.floor(v*0.7), Math.floor(255-v*0.4)],
+      v=>[Math.floor(v*1.0), Math.floor(v*0.6), Math.floor(v*0.2)],
+      v=>[Math.floor(255 - v), Math.floor(v), Math.floor(v*0.5)],
+      v=>[Math.floor(v*0.3), Math.floor(v*0.8), Math.floor(255 - v*0.2)],
+      v=>[Math.floor(v*0.2), Math.floor(255 - v*0.5), Math.floor(v*0.9)]
+    ];
+    const pal = palettes[mapIndex % palettes.length];
+    const d = imgData.data;
+    for (let i=0;i<d.length;i+=4){
+      const v = Math.round((d[i]+d[i+1]+d[i+2])/3);
+      const c = pal(v);
+      d[i]=c[0]; d[i+1]=c[1]; d[i+2]=c[2];
+    }
+    return imgData;
+  }
+
+  function oilPaintPixels(imgData, radius=3, bins=32) {
+    const w = imgData.width, h = imgData.height;
+    const src = imgData.data;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    const r = Math.max(1, radius|0);
+    for (let y=0;y<h;y++){
+      for (let x=0;x<w;x++){
+        const histR = new Array(bins).fill(0);
+        const histG = new Array(bins).fill(0);
+        const histB = new Array(bins).fill(0);
+        const count = new Array(bins).fill(0);
+        for (let ky=-r; ky<=r; ky++){
+          for (let kx=-r; kx<=r; kx++){
+            const sx = clamp(x+kx,0,w-1);
+            const sy = clamp(y+ky,0,h-1);
+            const off = (sy*w + sx)*4;
+            const vr = src[off], vg = src[off+1], vb = src[off+2];
+            const idx = Math.floor(((vr+vg+vb)/3) / (256/bins));
+            histR[idx] += vr; histG[idx]+=vg; histB[idx]+=vb; count[idx]++;
+          }
+        }
+        let maxI=0; for (let i=1;i<bins;i++) if (count[i]>count[maxI]) maxI=i;
+        const off2 = (y*w + x)*4;
+        dst[off2] = Math.floor(histR[maxI]/Math.max(1,count[maxI]));
+        dst[off2+1] = Math.floor(histG[maxI]/Math.max(1,count[maxI]));
+        dst[off2+2] = Math.floor(histB[maxI]/Math.max(1,count[maxI]));
+        dst[off2+3] = 255;
+      }
+    }
+    return out;
+  }
+
+  function cartoonPixels(imgData, blurRadius=3, posterizeLevels=6, edgeStrength=1) {
+    const blurred = gaussianPixels(imgData, blurRadius);
+    const posterized = posterizePixels(copyImageData(document.createElement('canvas').getContext('2d'), blurred), posterizeLevels);
+    const edges = sobelPixels(imgData, edgeStrength, 'sobel');
+    const out = posterized;
+    for (let i=0;i<out.data.length;i+=4){
+      const e = edges.data[i];
+      const scale = 1 - (e/255);
+      out.data[i] = out.data[i]*scale;
+      out.data[i+1] = out.data[i+1]*scale;
+      out.data[i+2] = out.data[i+2]*scale;
+      out.data[i+3] = 255;
+    }
+    return out;
+  }
+
+  function morphology(imgData, radius=1, op='dilate') {
+    const w = imgData.width, h = imgData.height;
+    const src = imgData.data;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    for (let y=0;y<h;y++){
+      for (let x=0;x<w;x++){
+        let best = op==='dilate' ? 0 : 255;
+        for (let ky=-radius; ky<=radius; ky++){
+          for (let kx=-radius; kx<=radius; kx++){
+            const sx = clamp(x+kx,0,w-1), sy = clamp(y+ky,0,h-1);
+            const off = (sy*w + sx)*4;
+            const v = Math.round((src[off]+src[off+1]+src[off+2])/3);
+            if (op==='dilate') best = Math.max(best, v); else best = Math.min(best, v);
+          }
+        }
+        const off2 = (y*w + x)*4;
+        dst[off2]=dst[off2+1]=dst[off2+2]=best;
+        dst[off2+3]=255;
+      }
+    }
+    return out;
+  }
+
+  function freqFilter(imgData, radius=4, type='low') {
+    const blurred = gaussianPixels(imgData, radius);
+    if (type === 'low') return blurred;
+    const out = copyImageData(document.createElement('canvas').getContext('2d'), imgData);
+    for (let i=0;i<imgData.data.length;i+=4){
+      out.data[i] = clamp(imgData.data[i] - blurred.data[i] + 128, 0, 255);
+      out.data[i+1] = clamp(imgData.data[i+1] - blurred.data[i+1] + 128, 0, 255);
+      out.data[i+2] = clamp(imgData.data[i+2] - blurred.data[i+2] + 128, 0, 255);
+      out.data[i+3] = 255;
+    }
+    return out;
+  }
+
+  // ====== Main update function ======
+  function updateFilteredImage(){
+    if (!baseImageData) return;
+    const filter = filterSelect.value;
+    const val1n = parseFloat(r1.value);
+    const val2n = parseFloat(r2.value);
+    const val3n = parseFloat(r3.value);
+    const val4n = parseFloat(r4.value);
+
+    const ctxTmp = document.createElement('canvas').getContext('2d');
+    ctxTmp.canvas.width = baseImageData.width;
+    ctxTmp.canvas.height = baseImageData.height;
+    ctxTmp.putImageData(baseImageData, 0, 0);
+    let imgData = ctxTmp.getImageData(0,0,ctxTmp.canvas.width, ctxTmp.canvas.height);
+
+    switch(filter){
+      case 'posterize': imgData = posterizePixels(imgData, Math.max(2, Math.round(val1n))); break;
+      case 'solarize': imgData = solarizePixels(imgData, val1n); break;
+      case 'threshold': imgData = thresholdPixels(imgData, val1n); break;
+      case 'noise': imgData = noisePixels(imgData, val1n); break;
+      case 'emboss': imgData = embossPixels(imgData, val2n); break;
+      case 'sobel': imgData = sobelPixels(imgData, val2n, 'sobel'); break;
+      case 'prewitt': imgData = sobelPixels(imgData, val2n, 'prewitt'); break;
+      case 'laplacian': imgData = sobelPixels(imgData, val2n, 'laplacian'); break;
+      case 'sharpen': imgData = sharpenPixels(imgData, val2n); break;
+      case 'gaussian': imgData = gaussianPixels(imgData, Math.max(1, Math.round(val3n))); break;
+      case 'motionblur': imgData = motionBlurPixels(imgData, Math.max(1, Math.round(val3n)), val4n); break;
+      case 'halftone': imgData = halftonePixels(imgData, Math.max(2, Math.round(val3n))); break;
+      case 'glitch': imgData = glitchPixels(imgData, Math.max(1, Math.round(val1n))); break;
+      case 'colormap': imgData = colorMapPixels(imgData, Math.max(0, Math.round(val1n))); break;
+      case 'oilpaint': imgData = oilPaintPixels(imgData, Math.max(1, Math.round(val3n)), Math.max(4, Math.round(val1n))); break;
+      case 'cartoon': imgData = cartoonPixels(imgData, Math.max(1, Math.round(val3n)), Math.max(2, Math.round(val1n)), val2n); break;
+      case 'morphology':
+        imgData = morphology(imgData, Math.max(1, Math.round(val3n)), r2.value == '0' ? 'dilate' : 'erode'); break;
+      case 'freqfilter':
+        imgData = freqFilter(imgData, Math.max(1, Math.round(val3n)), val2n>0? 'high':'low'); break;
+      case 'none':
+      default:
+        break;
+    }
+
+    filtCanvas.width = imgData.width; filtCanvas.height = imgData.height;
+    filtCanvas.getContext('2d').putImageData(imgData, 0, 0);
+  }
+
+  // ====== Load & initialize ======
+  function loadImageFromSource(src) {
+    const img = new Image();
+    img.onload = () => {
+      // Scale image to fit max dimensions while maintaining aspect ratio
+      const maxWidth = 700;
+      const maxHeight = 700;
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      
+      origCanvas.width = width; origCanvas.height = height;
+      filtCanvas.width = width; filtCanvas.height = height;
+      const octx = origCanvas.getContext('2d');
+      octx.clearRect(0, 0, width, height);
+      octx.drawImage(img, 0, 0, width, height);
+      const ctxTmp = document.createElement('canvas').getContext('2d');
+      ctxTmp.canvas.width = width; ctxTmp.canvas.height = height;
+      ctxTmp.drawImage(img, 0, 0, width, height);
+      baseImageData = ctxTmp.getImageData(0, 0, width, height);
+      updateFilteredImage();
+    };
+    img.onerror = (e) => { console.error("Image load error", e); alert("Failed to load image. Use file input or run via localhost server."); };
+    img.src = src;
+  }
+
+  fileInput.addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    loadImageFromSource(url);
+  });
+
+  window.addEventListener('dragover', e=>{ e.preventDefault(); });
+  window.addEventListener('drop', e=>{
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const url = URL.createObjectURL(e.dataTransfer.files[0]);
+      loadImageFromSource(url);
+    }
+  });
+
+  filterSelect.addEventListener('change', ()=> { configureSlidersFor(filterSelect.value); updateFilteredImage(); });
+  [r1,r2,r3,r4].forEach(el => el.addEventListener('input', updateFilteredImage));
+
+  // initial load
+  loadImageFromSource(imageURL);
+
+  </script>
+</body>
+</html>
