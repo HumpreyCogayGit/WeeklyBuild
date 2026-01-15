@@ -5,8 +5,9 @@
  */
 const Footer = () => {
     const version = '1.0.0';
-    const buildDate = new Date().toISOString();
-    const buildNumber = Date.now().toString().slice(-6);
+    // Build metadata: update these when you deploy a new version
+    const buildDate = '2026-01-15T00:00:00.000Z';
+    const buildNumber = '202601150001';
     
     // Format date for display
     const formatDate = (isoString) => {
