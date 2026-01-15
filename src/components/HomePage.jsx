@@ -14,6 +14,18 @@ const HomePage = ({ isVisible }) => {
 
                         <section className="recent-posts">
                                 <h2>Recent Posts</h2>
+                                
+                                <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>January 15, 2026:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/aiimagedetection.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        AI Image Detection
+                                    </a>
+                                    — A detailed Python tool for detecting AI-generated images using Benford's Law, DCT analysis, color entropy, and block variance heuristics.
+                                </div>
                                 <div style={{ marginBottom: '1.5em' }}>
                                     <strong>Dec 15, 2025:</strong> &nbsp;
                                     <a
@@ -23,7 +35,7 @@ const HomePage = ({ isVisible }) => {
                                     >
                                         Image Effects Studio
                                     </a>
-                                    — A comprehensive image filtering tool featuring 18+ effects including edge detection (Sobel, Prewitt, Laplacian), artistic filters (Oil Paint, Cartoon), blur effects (Gaussian, Motion Blur), and creative transformations (Halftone, Glitch, Posterize) with real-time parameter adjustment.
+                                    — Image filtering tool featuring 18+ effects including edge detection (Sobel, Prewitt, Laplacian), artistic filters (Oil Paint, Cartoon), blur effects (Gaussian, Motion Blur), and creative transformations (Halftone, Glitch, Posterize) with real-time parameter adjustment.
                                 </div>
                                 <div style={{ marginBottom: '1.5em' }}>
                                     <strong>Nov 13, 2025:</strong> &nbsp;

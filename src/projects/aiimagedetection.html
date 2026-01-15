@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Image Detection — Source (Python)</title>
+    <style>
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#fff;color:#111;padding:24px}
+    .container{max-width:1100px;margin:0 auto}
+    h1{color:#2c6e49;margin-bottom:6px}
+    .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+    button{background:#2c6e49;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    button.secondary{background:#f3f4f6;color:#111}
+    .code{background:#0b1021;color:#e6eef8;padding:18px;border-radius:8px;overflow:auto;font-family:Consolas, 'Courier New', monospace;font-size:13px;line-height:1.45}
+    .meta{color:#6b7280}
+    .note{margin-top:12px;color:#374151}
+    pre{white-space:pre-wrap}
+  </style>
+        <!-- Inline lightweight syntax highlight styles (no external CDN) -->
+        <style>
+            .hl-keyword{color:#ffb86b;font-weight:600}
+            .hl-string{color:#a3e635}
+            .hl-comment{color:#94a3b8;font-style:italic}
+            .hl-number{color:#7dd3fc}
+            .hl-builtin{color:#f472b6}
+            .code{background:#0b1021;color:#e6eef8;padding:18px;border-radius:8px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,'Roboto Mono',monospace;font-size:13px;line-height:1.45}
+            pre{white-space:pre-wrap}
+        </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI Image Detection — Source (Python)</h1>
+    <div class="toolbar">
+      <button id="copyBtn">Copy Code</button>
+      <button id="downloadBtn" class="secondary">Download .py</button>
+      <span class="meta">File: <strong>aiimagedetection.py</strong></span>
+    </div>
+
+    <div class="code" id="codeBlock" tabindex="0">
+<pre><code class="language-python" id="visibleCode">import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.fftpack import dct
+from scipy.stats import chisquare
+import os
+
+"""
+AI IMAGE DETECTION USING BENFORD'S LAW & FORENSIC ANALYSIS
+============================================================
+
+METHODOLOGY OVERVIEW:
+This tool uses multiple forensic tests to detect AI-generated images by analyzing
+statistical patterns that differ between natural photos and synthetic images.
+
+TESTS PERFORMED:
+-----------------
+
+1. BENFORD'S LAW - DC COEFFICIENTS (Max 3 points)
+   - Analyzes average brightness values per 8x8 block
+   - AI images often show higher deviation in DC coefficients
+   - Score: +3 if MSE > 0.010, +2 if MSE > 0.007
+   - Real photos typically: DC MSE = 0.003-0.008
+   - AI images typically: DC MSE = 0.010-0.020
+
+2. BENFORD'S LAW - AC COEFFICIENTS (Max 4 points)
+   - Analyzes frequency detail coefficients
+   - KEY FINDING: Modern AI is "too perfect" at matching Benford's Law
+   - Score: +4 if MSE < 0.0005 (suspiciously perfect)
+   -        +2 if MSE < 0.001 (very low, possibly synthetic)
+   -        +2 if MSE > 0.005 (high deviation)
+   - Real photos typically: AC MSE = 0.001-0.003
+   - AI images typically: AC MSE < 0.0005 OR vary widely
+
+3. DC/AC RATIO IMBALANCE (Max 3 points)
+   - Compares DC vs AC coefficient deviations
+   - AI has characteristic imbalance (high DC, low AC)
+   - Score: +3 if ratio > 20, +2 if ratio > 10, +1 if ratio < 1
+   - Real photos typically: DC/AC ratio = 2-5
+   - AI images typically: DC/AC ratio = 15-60+
+
+4. HIGH-FREQUENCY NOISE VARIANCE (Max 2 points)
+   - Measures texture detail using Laplacian filter
+   - AI cartoons/art often overly smooth or have unnatural noise
+   - Score: +2 if variance < 50 (too smooth)
+   -        +1 if variance 200-350 with low color entropy
+   - Real photos typically: 100-2000
+   - AI cartoons typically: < 50 or 200-500
+
+5. COLOR ENTROPY (Max 2 points)
+   - Measures color diversity in LAB color space
+   - AI art often has reduced color palette
+   - Score: +2 if entropy < 5.5
+   - Real photos typically: 5.8-7.5
+   - AI cartoons/art typically: 4.0-5.5
+
+6. BLOCK VARIANCE UNIFORMITY (Max 2 points)
+   - Analyzes consistency of texture complexity
+   - AI images can be suspiciously uniform
+   - Score: +2 if variance < 500 (overly uniform)
+   - Real photos typically: 100,000-5,000,000 (highly variable)
+   - AI images typically: < 1,000 (uniform) OR very high (variable)
+
+TOTAL SCORE INTERPRETATION:
+---------------------------
+Maximum Score: 16 points
+
+ 0-1 points:  LIKELY NATURAL (High Confidence)
+ 2-3 points:  POSSIBLY NATURAL - Minor Flags (Low Confidence)
+ 4-5 points:  POSSIBLE AI - Needs Review (Medium Confidence)
+ 6-8 points:  SUSPICIOUS - Probably AI (High Confidence)
+ 9+ points:   LIKELY AI-GENERATED (Very High Confidence)
+
+LIMITATIONS:
+------------
+- Modern AI models are trained to mimic natural statistics
+- Detection accuracy varies by AI model, image type, and post-processing
+- Best used as one tool in a comprehensive verification workflow
+- May produce false positives on heavily edited natural photos
+- Cartoon-style AI images are easier to detect than photorealistic ones
+
+USAGE:
+------
+analyze_benfords_law('path/to/image.jpg')
+"""
+
+def analyze_high_frequency_noise(img):
+    """
+    AI-generated images often have unnatural high-frequency noise patterns.
+    Returns a score where higher = more suspicious.
+    """
+    # Apply high-pass filter using Laplacian
+    laplacian = cv2.Laplacian(img, cv2.CV_64F)
+    
+    # Calculate variance of high-frequency content
+    noise_variance = np.var(laplacian)
+    
+    # AI images often have lower high-freq variance (too smooth) or unnatural patterns
+    # Natural photos typically have noise_variance between 100-2000
+    return noise_variance
+ 
+def analyze_color_distribution(image_path):
+    """
+    AI images often have unusual color distributions, especially in cartoons.
+    """
+    img_color = cv2.imread(image_path)
+    if img_color is None:
+        return 0
+    
+    # Convert to LAB color space (perceptually uniform)
+    lab = cv2.cvtColor(img_color, cv2.COLOR_BGR2LAB)
+    
+    # Calculate entropy of each channel
+    entropy_scores = []
+    for channel in cv2.split(lab):
+        hist = cv2.calcHist([channel], [0], None, [256], [0, 256])
+        hist = hist.flatten() / hist.sum()
+        hist = hist[hist > 0]  # Remove zeros
+        entropy = -np.sum(hist * np.log2(hist))
+        entropy_scores.append(entropy)
+    
+    avg_entropy = np.mean(entropy_scores)
+    
+    # AI cartoons often have lower entropy (fewer unique colors, more uniform)
+    # Natural photos: 6-8, AI cartoons: often 4-6
+    return avg_entropy
+
+def analyze_block_variance(img):
+    """
+    AI images often have suspiciously uniform block variances.
+    Natural photos have more variation in local complexity.
+    """
+    block_size = 16
+    variances = []
+    
+    for i in range(0, img.shape[0] - block_size + 1, block_size):
+        for j in range(0, img.shape[1] - block_size + 1, block_size):
+            block = img[i:i+block_size, j:j+block_size]
+            variances.append(np.var(block))
+    
+    # Calculate variance of variances (texture complexity distribution)
+    variance_of_variance = np.var(variances)
+    
+    return variance_of_variance
+
+def extract_leading_digit(coeffs):
+    """Extract first significant digit from array of numbers."""
+    # Filter out zeros and very small values
+    non_zero = coeffs[np.abs(coeffs) > 1e-5]
+    if len(non_zero) == 0:
+        return np.array([])
+    
+    abs_coeffs = np.abs(non_zero)
+    exponents = np.floor(np.log10(abs_coeffs))
+    base_powers = 10 ** exponents
+    first_digits = np.floor(abs_coeffs / base_powers).astype(int)
+    return first_digits
+
+def calculate_benford_frequencies(first_digits):
+    """Calculate actual vs expected Benford frequencies."""
+    counts = np.bincount(first_digits)
+    if len(counts) < 10:
+        counts = np.pad(counts, (0, 10 - len(counts)), 'constant')
+    
+    digit_counts = counts[1:10]
+    total = np.sum(digit_counts)
+    
+    if total == 0:
+        return None, None, None
+    
+    actual_freq = digit_counts / total
+    benford_freq = np.log10(1 + 1 / np.arange(1, 10))
+    mse = np.mean((actual_freq - benford_freq) ** 2)
+    
+    return actual_freq, benford_freq, mse
+
+def analyze_benfords_law(image_path):
+    """
+    Multi-method AI detection using Benford's Law + additional forensic tests.
+    Especially effective for cartoon/stylized AI images.
+    """
+    # 1. Load the image
+    if not os.path.exists(image_path):
+        print(f"Error: File '{image_path}' not found.")
+        return
+
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    
+    if img is None:
+        print("Error: Could not read the image. Check file format.")
+        return
+
+    print(f"Analyzing: {image_path}")
+    print(f"Image size: {img.shape[1]}x{img.shape[0]} pixels\n")
+
+    # 2. ADDITIONAL FORENSIC TESTS
+    print("Running multi-method forensic analysis...")
+    
+    # High-frequency noise analysis
+    noise_variance = analyze_high_frequency_noise(img)
+    
+    # Color distribution entropy
+    color_entropy = analyze_color_distribution(image_path)
+    
+    # Block variance analysis
+    block_var = analyze_block_variance(img)
+    
+    print(f"\nForensic Metrics:")
+    print(f"  High-freq noise variance: {noise_variance:.2f}")
+    print(f"  Color entropy: {color_entropy:.2f}")
+    print(f"  Block variance score: {block_var:.2f}")
+
+    # 3. Apply Block-Based DCT (8x8 blocks like JPEG compression)
+    img_float = img.astype(float)
+    
+    dc_coeffs = []  # DC coefficients (top-left of each block)
+    ac_coeffs = []  # AC coefficients (rest of the block)
+    
+    block_size = 8
+    for i in range(0, img.shape[0] - block_size + 1, block_size):
+        for j in range(0, img.shape[1] - block_size + 1, block_size):
+            block = img_float[i:i+block_size, j:j+block_size]
+            dct_block = dct(dct(block.T, norm='ortho').T, norm='ortho')
+            
+            # DC coefficient is the top-left (average brightness)
+            dc_coeffs.append(dct_block[0, 0])
+            
+            # AC coefficients are everything else (frequency details)
+            ac_coeffs.extend(dct_block.flatten()[1:])
+    
+    dc_coeffs = np.array(dc_coeffs)
+    ac_coeffs = np.array(ac_coeffs)
+    
+    print(f"\nDCT Analysis:")
+    print(f"  Blocks analyzed: {len(dc_coeffs)}")
+    print(f"  DC coefficients: {len(dc_coeffs)}")
+    print(f"  AC coefficients: {len(ac_coeffs)}")
+
+    # 4. Analyze DC and AC coefficients separately
+    dc_digits = extract_leading_digit(dc_coeffs)
+    ac_digits = extract_leading_digit(ac_coeffs)
+    
+    dc_actual, dc_benford, dc_mse = calculate_benford_frequencies(dc_digits)
+    ac_actual, ac_benford, ac_mse = calculate_benford_frequencies(ac_digits)
+    
+    if dc_actual is None or ac_actual is None:
+        print("Error: Insufficient data for analysis.")
+        return
+    
+    # 5. Chi-square test for statistical significance
+    dc_chi2, dc_p = chisquare(dc_actual * len(dc_digits), dc_benford * len(dc_digits))
+    ac_chi2, ac_p = chisquare(ac_actual * len(ac_digits), ac_benford * len(ac_digits))
+    
+    # 6. Display Benford Results
+    print("\n" + "=" * 60)
+    print("BENFORD'S LAW ANALYSIS")
+    print("=" * 60)
+    print(f"\nDC Coefficients:")
+    print(f"  MSE Deviation: {dc_mse:.6f}")
+    print(f"  Chi-square p-value: {dc_p:.4f}")
+    
+    print(f"\nAC Coefficients:")
+    print(f"  MSE Deviation: {ac_mse:.6f}")
+    print(f"  Chi-square p-value: {ac_p:.4f}")
+    
+    # 7. MULTI-METHOD AI DETECTION WITH SCORING
+    print("\n" + "=" * 60)
+    print("COMPREHENSIVE AI DETECTION")
+    print("=" * 60)
+    
+    suspicion_score = 0
+    reasons = []
+    
+    # KEY INSIGHT: Modern AI is TOO GOOD at matching Benford's Law
+    # Real photos have small natural deviations, AI is suspiciously perfect or imbalanced
+    
+    # 1. DC Coefficient Analysis (AI often deviates MORE here)
+    if dc_mse > 0.010:
+        suspicion_score += 3
+        reasons.append(f"DC coefficient deviation high ({dc_mse:.4f}) - AI pattern")
+    elif dc_mse > 0.007:
+        suspicion_score += 2
+        reasons.append(f"DC coefficient deviation elevated ({dc_mse:.4f})")
+    
+    # 2. AC Coefficient Analysis - TOO LOW is suspicious (overfitted AI)
+    if ac_mse < 0.0005:
+        suspicion_score += 4
+        reasons.append(f"AC MSE suspiciously perfect ({ac_mse:.6f}) - AI overfitting")
+    elif ac_mse < 0.001:
+        suspicion_score += 2
+        reasons.append(f"AC MSE very low ({ac_mse:.4f}) - possibly synthetic")
+    elif ac_mse > 0.005:
+        suspicion_score += 2
+        reasons.append(f"AC MSE high deviation ({ac_mse:.4f})")
+    
+    # 3. DC/AC Imbalance (AI has high DC MSE but low AC MSE)
+    dc_ac_ratio = dc_mse / (ac_mse + 0.0001)  # Avoid division by zero
+    if dc_ac_ratio > 20:
+        suspicion_score += 3
+        reasons.append(f"DC/AC imbalance extreme ({dc_ac_ratio:.1f}) - AI signature")
+    elif dc_ac_ratio > 10:
+        suspicion_score += 2
+        reasons.append(f"DC/AC imbalance high ({dc_ac_ratio:.1f})")
+    elif dc_ac_ratio < 1:
+        suspicion_score += 1
+        reasons.append(f"Inverted DC/AC ratio ({dc_ac_ratio:.2f}) - unusual")
+    
+    # 4. High-frequency noise (AI cartoons often too smooth)
+    if noise_variance < 50:
+        suspicion_score += 2
+        reasons.append(f"Unnaturally low noise ({noise_variance:.1f}) - AI smoothing")
+    elif noise_variance > 200 and noise_variance < 350 and color_entropy < 6.0:
+        # AI often in this "goldilocks zone" with moderate noise but low diversity
+        suspicion_score += 1
+        reasons.append(f"Suspicious noise/entropy combination")
+    
+    # 5. Color entropy (AI cartoons/art have lower diversity)
+    if color_entropy < 5.5:
+        suspicion_score += 2
+        reasons.append(f"Low color diversity ({color_entropy:.2f}) - typical of AI art")
+    
+    # 6. Block variance - only flag if suspiciously uniform (too low)
+    if block_var < 500:
+        suspicion_score += 2
+        reasons.append(f"Overly uniform texture ({block_var:.1f}) - AI pattern")
+    
+    # Final classification
+    print(f"\nSuspicion Score: {suspicion_score}/16")
+    print(f"\nDiagnostic Info:")
+    print(f"  DC/AC MSE Ratio: {dc_ac_ratio:.2f}")
+    print(f"  (Ratio > 10 suggests AI, Real photos typically 2-5)")
+    
+    print(f"\nRed Flags Detected:")
+    if reasons:
+        for i, reason in enumerate(reasons, 1):
+            print(f"  {i}. {reason}")
+    else:
+            print("  None - appears natural")
+    
+    print("\n" + "-" * 60)
+    
+    if suspicion_score >= 9:
+        confidence = "VERY HIGH"
+        result = "LIKELY AI-GENERATED"
+        color = 'red'
+    elif suspicion_score >= 6:
+        confidence = "HIGH"
+        result = "SUSPICIOUS - Probably AI"
+        color = 'orange'
+    elif suspicion_score >= 4:
+        confidence = "MEDIUM"
+        result = "POSSIBLE AI - Needs Review"
+        color = 'yellow'
+    elif suspicion_score >= 2:
+        confidence = "LOW"
+        result = "POSSIBLY NATURAL - Minor Flags"
+        color = 'lightgreen'
+    else:
+        confidence = "HIGH"
+        result = "LIKELY NATURAL"
+        color = 'green'
+    
+    print(f"\nFINAL VERDICT: {result}")
+    print(f"Confidence: {confidence}")
+    print("=" * 60)
+    
+    # 8. Visualization
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    digits = np.arange(1, 10)
+    
+    # DC Coefficients Plot
+    ax1.bar(digits, dc_actual, color='skyblue', alpha=0.7, label='DC Actual')
+    ax1.plot(digits, dc_benford, color='red', marker='o', linewidth=2, label="Benford's Law")
+    ax1.set_title(f"DC Coefficients\nMSE: {dc_mse:.6f}, p={dc_p:.4f}")
+    ax1.set_xlabel('First Digit')
+    ax1.set_ylabel('Frequency')
+    ax1.set_xticks(digits)
+    ax1.legend()
+    ax1.grid(axis='y', linestyle='--', alpha=0.5)
+    
+    # AC Coefficients Plot
+    ax2.bar(digits, ac_actual, color='lightcoral', alpha=0.7, label='AC Actual')
+    ax2.plot(digits, ac_benford, color='red', marker='o', linewidth=2, label="Benford's Law")
+    ax2.set_title(f"AC Coefficients\nMSE: {ac_mse:.6f}, p={ac_p:.4f}")
+    ax2.set_xlabel('First Digit')
+    ax2.set_ylabel('Frequency')
+    ax2.set_xticks(digits)
+    ax2.legend()
+    ax2.grid(axis='y', linestyle='--', alpha=0.5)
+    
+    fig.suptitle(f"{os.path.basename(image_path)}: {result}\nSuspicion Score: {suspicion_score}/16", 
+                 fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.show()
+
+def print_help():
+    """Display comprehensive guide about the detection system."""
+    print("""
+<br /><br /><br />
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+               <b>AI IMAGE DETECTION - SCORING GUIDE</b>
+               SCORING BREAKDOWN (Total: 16 points)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. DC COEFFICIENT DEVIATION (0-3 points)
+   ├─ Tests average brightness distribution per block
+   ├─ +3 pts: MSE > 0.010 (High deviation - AI pattern)
+   ├─ +2 pts: MSE > 0.007 (Moderate deviation)
+   └─ Typical ranges:
+      • Real photos: 0.003-0.008
+      • AI images: 0.010-0.020+
+
+2. AC COEFFICIENT DEVIATION (0-4 points)
+   ├─ Tests frequency detail distribution
+   ├─ +4 pts: MSE < 0.0005 (TOO PERFECT - AI overfitting)
+   ├─ +2 pts: MSE < 0.001 (Very low - possibly synthetic)
+   ├─ +2 pts: MSE > 0.005 (High deviation)
+   └─ Typical ranges:
+      • Real photos: 0.001-0.003
+      • AI images: < 0.0005 or varies widely
+
+3. DC/AC RATIO IMBALANCE (0-3 points)
+   ├─ Compares DC vs AC deviations
+   ├─ +3 pts: Ratio > 20 (Extreme imbalance - AI signature)
+   ├─ +2 pts: Ratio > 10 (High imbalance)
+   ├─ +1 pt:  Ratio < 1 (Inverted - unusual)
+   └─ Typical ranges:
+      • Real photos: 2-5
+      • AI images: 15-60+
+
+4. HIGH-FREQUENCY NOISE (0-2 points)
+   ├─ Measures texture noise using edge detection
+   ├─ +2 pts: Variance < 50 (Too smooth - AI smoothing)
+   ├─ +1 pt:  200-350 range with low color entropy
+   └─ Typical ranges:
+      • Real photos: 100-2,000
+      • AI cartoons: < 50 or 200-500
+
+5. COLOR ENTROPY (0-2 points)
+   ├─ Measures color palette diversity
+   ├─ +2 pts: Entropy < 5.5 (Limited colors - AI art)
+   └─ Typical ranges:
+      • Real photos: 5.8-7.5
+      • AI art/cartoons: 4.0-5.5
+
+6. BLOCK VARIANCE UNIFORMITY (0-2 points)
+   ├─ Analyzes texture consistency across image
+   ├─ +2 pts: Variance < 500 (Too uniform - AI pattern)
+   └─ Typical ranges:
+      • Real photos: 100,000-5,000,000 (highly variable)
+      • AI images: < 1,000 (suspiciously uniform)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL VERDICT THRESHOLDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ 0-1 pts  LIKELY NATURAL           [Confidence: High]
+ 2-3 pts  POSSIBLY NATURAL          [Confidence: Low]
+ 4-5 pts  POSSIBLE AI               [Confidence: Medium]
+ 6-8 pts  SUSPICIOUS - Probably AI  [Confidence: High]
+ 9+ pts   LIKELY AI-GENERATED       [Confidence: Very High]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Modern AI is trained to mimic natural statistics, making detection harder
+• The "too perfect" AC coefficient is a key indicator (paradoxically!)
+• DC/AC imbalance is one of the strongest AI signatures
+• Heavily edited photos may trigger false positives
+• Best used alongside other verification methods
+• Cartoon-style AI is easier to detect than photorealistic AI
+
+    """)
+
+if __name__ == "__main__":
+    # Uncomment to see detailed scoring guide
+    # print_help()
+    
+    # Test both images for calibration
+    print("=" * 70)
+    print("TESTING PHOTO")
+    print("=" * 70 + "\n")
+    analyze_benfords_law('sample3.jpg')
+</code></pre>
+
+  </div>
+
+                <script>
+                    (function(){
+                        const visibleCodeEl = document.getElementById('visibleCode');
+                        const rawCodeText = visibleCodeEl.innerText.replace(/\u00A0/g, '');
+        
+                        document.getElementById('copyBtn').addEventListener('click', async () => {
+                            try { await navigator.clipboard.writeText(rawCodeText); alert('Code copied to clipboard'); }
+                            catch(err){ alert('Copy failed: ' + err); }
+                        });
+
+                        document.getElementById('downloadBtn').addEventListener('click', () => {
+                            const blob = new Blob([rawCodeText], { type: 'text/x-python' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a'); a.href = url; a.download = 'aiimagedetection.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                        });
+                    })();
+                </script>
+</body>
+</html>
+    
+

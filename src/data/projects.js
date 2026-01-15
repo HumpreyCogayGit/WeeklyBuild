@@ -12,6 +12,37 @@ const PROJECTS_DATA = {
             icon: '',
             projects: [
                 {
+                    id: 'aiimagedetection',
+                    slug: 'aiimagedetection',
+                    title: 'AI Image Detection',
+                    subtitle: "Benford's Law & Forensic Analysis (Python)",
+                    description: 'A detailed Python tool for detecting AI-generated images using Benford\'s Law, DCT analysis, color entropy, and block variance heuristics.',
+                    status: 'completed',
+                    date: '2026-01-15',
+                    technologies: ['Python', 'OpenCV', 'NumPy', 'SciPy', 'Matplotlib', 'Image Forensics'],
+                    overview: 'Multi-method detection combining Benford\'s Law on DCT coefficients with texture and color analysis to score the likelihood of AI generation.',
+                    problem: 'Detect statistical artifacts introduced by image synthesis models that differ from natural photography.',
+                    solution: 'Implements DC/AC Benford checks, block variance analysis, high-frequency noise estimation, and color entropy measures to produce a composite score and verdict.',
+                    challenges: [
+                        'Handling variable image sizes and color spaces',
+                        'Tuning thresholds to balance false positives and false negatives',
+                        'Preserving ASCII-art and comments when rendering source in HTML'
+                    ],
+                    learnings: [
+                        'Applying Benford\'s Law to DCT coefficients',
+                        'Practical image forensic techniques with OpenCV',
+                        'Designing user-facing diagnostics and scoring thresholds'
+                    ],
+                    futureImprovements: [
+                        'Add CLI argument parsing and batch processing',
+                        'Provide a web-based frontend for interactive analysis',
+                        'Add model-specific heuristics for newer generative models'
+                    ],
+                    github: '',
+                    demo: './src/projects/aiimagedetection.html',
+                    featured: true
+                },
+                {
                     id: 'image-effects',
                     slug: 'image-effects',
                     title: 'Image Effects Studio',
