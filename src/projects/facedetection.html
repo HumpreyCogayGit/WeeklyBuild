@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Face Detection — Source (Python)</title>
+  <style>
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#fff;color:#111;padding:24px}
+    .container{max-width:1100px;margin:0 auto}
+    h1{color:#2c6e49;margin-bottom:6px}
+    .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+    button{background:#2c6e49;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    button.secondary{background:#f3f4f6;color:#111}
+    .code{background:#0b1021;color:#e6eef8;padding:18px;border-radius:8px;overflow:auto;font-family:Consolas, 'Courier New', monospace;font-size:13px;line-height:1.45}
+    .meta{color:#6b7280}
+    .note{margin-top:12px;color:#374151}
+    pre{white-space:pre-wrap}
+  </style>
+  <!-- Inline lightweight syntax highlight styles (no external CDN) -->
+  <style>
+    .hl-keyword{color:#ffb86b;font-weight:600}
+    .hl-string{color:#a3e635}
+    .hl-comment{color:#94a3b8;font-style:italic}
+    .hl-number{color:#7dd3fc}
+    .hl-builtin{color:#f472b6}
+    .code{background:#0b1021;color:#e6eef8;padding:18px;border-radius:8px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,'Roboto Mono',monospace;font-size:13px;line-height:1.45}
+    pre{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Face Detection — Source (Python)</h1>
+    <div class="toolbar">
+      <button id="copyBtn">Copy Code</button>
+      <button id="downloadBtn" class="secondary">Download .py</button>
+      <span class="meta">File: <strong>facedetection.py</strong></span>
+    </div>
+
+    <div class="code" id="codeBlock" tabindex="0">
+<pre><code class="language-python" id="visibleCode">import os
+# Suppress TensorFlow oneDNN and deprecation noise before any TF import
+os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
+
+import logging
+# Silence Python-level TF/tf_keras deprecation warnings before the import
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+logging.getLogger('absl').setLevel(logging.ERROR)
+
+import io
+import json
+import argparse
+import concurrent.futures
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, Generator, List, Optional, Tuple, Union
+from dataclasses import dataclass, asdict
+from deepface import DeepFace
+from PIL import Image, ImageCms, ImageDraw, ImageFont, ImageOps
+import numpy as np
+import cv2
+
+try:
+    from tqdm import tqdm
+    _TQDM_AVAILABLE = True
+except ImportError:
+    _TQDM_AVAILABLE = False
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+__all__ = [
+    'BoundingBox',
+    'FaceData',
+    'ProcessingResult',
+    'ColorProfileManager',
+    'ImageValidator',
+    'FaceVisualizer',
+    'EmbeddingStorage',
+    'DeepFaceDetector',
+]
+
+
+@dataclass
+class BoundingBox:
+    """
+    Represents the spatial coordinates of a detected face.
+
+    Attributes:
+        x (int): The x-coordinate of the top-left corner.
+        y (int): The y-coordinate of the top-left corner.
+        width (int): The width of the bounding box in pixels.
+        height (int): The height of the bounding box in pixels.
+    """
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+@dataclass
+class FaceData:
+    """
+    Encapsulates data for a computationally detected face.
+
+    Attributes:
+        face_id (int): A unique identifier assigned to the face within the image.
+        bounding_box (BoundingBox): The spatial coordinates of the face.
+        embedding (List[float]): The extracted feature vector representing the face.
+        confidence (Optional[float]): The model's confidence score for the detection.
+    """
+    face_id: int
+    bounding_box: BoundingBox
+    embedding: List[float]
+    confidence: Optional[float] = None
+    
+    def to_dict(self) -&gt; dict:
+        """
+        Serializes the FaceData instance to a dictionary.
+
+        Returns:
+            dict: Dictionary representation of the face data, including embedding dimension.
+        """
+        return {
+            **asdict(self),
+            'embedding_dim': len(self.embedding),
+        }
+
+
+@dataclass
+class ProcessingResult:
+    """
+    Encapsulates the outcome of processing a single image file.
+
+    Attributes:
+        filename (str): The name of the processed image file.
+        num_faces (int): The total number of faces successfully detected.
+        output_path (Optional[str]): The file path where the visualized output is saved.
+        embeddings_path (Optional[str]): The file path where the extracted embeddings are saved.
+        success (bool): Indicates whether the processing completed without critical errors.
+        error_message (Optional[str]): Detailed error message if the processing failed.
+    """
+    filename: str
+    num_faces: int
+    output_path: Optional[str]
+    embeddings_path: Optional[str]
+    success: bool = True
+    error_message: Optional[str] = None
+
+
+class ColorProfileManager:
+    """
+    Handles color profile management via accurate ICC color space conversion.
+
+    This manager leverages `ImageCms.profileToProfile` to perform a mathematically
+    sound remapping of pixel values from the embedded source color space (such as 
+    AdobeRGB or ProPhoto) into standard sRGB. This process preserves the intended 
+    visual appearance, preventing color shifts that occur when ICC tags are merely 
+    stripped. It employs a progressive fallback mechanism, safely resorting to 
+    profile stripping if the source ICC profile is corrupted or missing.
+    """
+
+    def __init__(self):
+        """
+        Initializes the ColorProfileManager and caches the standard sRGB representation 
+        to circumvent redundant processing overhead.
+        """
+        logger.info("Initialized color profile manager (ImageCms conversion mode)")
+        # Cache the sRGB profile object – creating it on every image call is
+        # redundant since the profile descriptor never changes.
+        self._srgb_profile = ImageCms.createProfile('sRGB')
+
+    def normalize_color_profile(self, img: Image.Image) -&gt; Tuple[Image.Image, str]:
+        """
+        Transforms the provided image to standard sRGB using appropriate ICC math.
+
+        Execution Priority:
+        1. Parses the embedded ICC profile and actively remaps pixel data into sRGB.
+        2. In the absence of an ICC profile, standardizes the image into the RGB matrix.
+        3. If transformation encounters irregularities, executes a defensive profile strip.
+
+        Args:
+            img (Image.Image): The loaded PIL Image object, which may contain an ICC descriptor.
+
+        Returns:
+            Tuple[Image.Image, str]: A tuple containing the corrected PIL Image and 
+            a diagnostic string detailing the operation performed.
+        """
+        try:
+            icc_data = img.info.get('icc_profile')
+
+            if not icc_data:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                return img, "No ICC profile – using as-is"
+
+            # Parse the embedded profile from the raw bytes
+            source_profile = ImageCms.ImageCmsProfile(io.BytesIO(icc_data))
+
+            # ImageCms requires RGB/RGBA; convert first if necessary
+            if img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGB')
+
+            # Remap pixel values: source color space → sRGB
+            # INTENT_RELATIVE_COLORIMETRIC is the CMS standard for photographic
+            # content – securing superior hue accuracy over the PERCEPTUAL default.
+            img_srgb = ImageCms.profileToProfile(
+                img,
+                source_profile,
+                self._srgb_profile,
+                renderingIntent=ImageCms.Intent.RELATIVE_COLORIMETRIC,
+                outputMode='RGB'
+            )
+            return img_srgb, "Converted to sRGB via ICC profile"
+
+        except Exception as e:
+            logger.warning(f"ICC conversion failed ({e}), stripping profile instead")
+            # Fallback: copy pixel data into a new normalized baseline format
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            stripped = Image.new('RGB', img.size)
+            stripped.paste(img)
+            return stripped, "ICC stripped (conversion fallback)"
+    
+    def save_with_standard_profile(self, img: Image.Image, output_path: str,
+                                   quality: int = 90):
+        """
+        Exports the processed image enforcing recognized baseline standard rendering.
+        
+        Saves the image intentionally stripping the ICC tag, commanding downstream
+        viewers to natively assume sRGB logic. Intelligently applies parameters:
+        JPEG formats utilize `quality`, while PNGs invoke `compress_level` routing
+        to guarantee format-specific optimization.
+
+        Args:
+            img (Image.Image): The composed PIL Image representation ready to write.
+            output_path (str): The valid destination file system path.
+            quality (int, optional): Output asset preservation quality. Defaults to 90.
+        """
+        try:
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+
+            ext = Path(output_path).suffix.lower()
+            # exif=b'' explicitly strips EXIF from output – required for
+            # privacy-oriented pipelines (face-blur mode), and avoids stale
+            # rotation/camera metadata in converted images.
+            save_kwargs = {}
+            if ext in ('.jpg', '.jpeg'):
+                save_kwargs = {'quality': quality, 'exif': b''}
+            elif ext == '.webp':
+                save_kwargs = {'quality': quality, 'method': 6}
+            elif ext == '.png':
+                save_kwargs = {'compress_level': 6, 'optimize': True}
+            
+            # Format-agnostic execution: TIFF/BMP gracefully receive no kwargs
+            img.save(output_path, **save_kwargs)
+
+        except Exception as e:
+            logger.error(f"Failed to save image: {e}")
+            raise
+
+
+class ImageValidator:
+    """
+    Standardizes structural integrity rules for image ingesting operations.
+    Validates filesystem size constraints, extension permissibility, and verifies
+    raw decoder capabilities to identify and reject malformed files early.
+    """
+    
+    SUPPORTED_FORMATS: frozenset = frozenset({'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'})
+    MAX_FILE_SIZE_MB = 200  # Parameter scaled accommodating standard high-res RAW exports
+    
+    @classmethod
+    def is_valid_image(cls, image_path: Path) -&gt; Tuple[bool, Optional[str]]:
+        """
+        Applies configured verification checks on candidate source paths.
+
+        Args:
+            image_path (Path): Abstraction of the specific OS path referencing the candidate file.
+
+        Returns:
+            Tuple[bool, Optional[str]]: A verification boolean and contextual rejection 
+            message if the file violates defined integrity rules.
+        """
+        if image_path.suffix.lower() not in cls.SUPPORTED_FORMATS:
+            return False, f"Unsupported format: {image_path.suffix}"
+        
+        size_mb = image_path.stat().st_size / (1024 * 1024)
+        if size_mb &gt; cls.MAX_FILE_SIZE_MB:
+            return False, f"File too large: {size_mb:.1f}MB (max: {cls.MAX_FILE_SIZE_MB}MB)"
+        
+        try:
+            # Open in header-only mode – avoids a full pixel decode here
+            # since detect_and_extract will fully load the image anyway.
+            # Corrupt files that pass this check will fail in processing
+            # and be recorded as a failed result.
+            with Image.open(image_path) as img:
+                img.verify()
+            return True, None
+        except Exception as e:
+            return False, f"Corrupted or truncated: {str(e)}"
+
+
+class FaceVisualizer:
+    """
+    Manages annotation generation and optional selective facial blurring mechanics.
+    This component manages graphical augmentation atop candidate structures, ensuring 
+    compliant privacy protections are scaled and mapped over dynamically sized bounding boxes.
+    """
+
+    # Multi-platform TTF font mapping – first viable strategy successfully binds font asset
+    _FONT_PATHS: tuple = (
+        'C:/Windows/Fonts/arialbd.ttf',
+        'C:/Windows/Fonts/arial.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+    )
+
+    def __init__(self, blur_faces: bool = False, blur_strength: int = 50,
+                 annotate_faces: bool = True):
+        """
+        Instantiates visualization dependencies and configures core privacy logic settings.
+
+        Args:
+            blur_faces (bool, optional): Toggles global facial obfuscation features. Defaults to False.
+            blur_strength (int, optional): The kernel strength scalar determining obfuscation strength. Defaults to 50.
+            annotate_faces (bool, optional): When True, draws a bounding box and text label
+                (face ID, blur flag, confidence %) over each detected face. When False the
+                output image is saved with no visual overlay — only optional blur is applied.
+                Defaults to True.
+        """
+        self.blur_faces = blur_faces
+        self.blur_strength = blur_strength
+        self.annotate_faces = annotate_faces
+        self._font_cache: Dict[int, ImageFont.ImageFont] = {}
+
+    def _get_font(self, size: int = 28) -&gt; ImageFont.ImageFont:
+        """Load a TTF font at *size* pt, caching results."""
+        if size in self._font_cache:
+            return self._font_cache[size]
+        for path in self._FONT_PATHS:
+            try:
+                font = ImageFont.truetype(path, size=size)
+                self._font_cache[size] = font
+                return font
+            except (IOError, OSError):
+                continue
+        # Last resort: Pillow's built-in bitmap font
+        font = ImageFont.load_default()
+        self._font_cache[size] = font
+        return font
+        
+    def _apply_gaussian_blur_all(self, img: Image.Image,
+                                  bboxes: List[BoundingBox]) -&gt; Image.Image:
+        """
+        Blur all face regions in a single numpy round-trip.
+
+        Converting PIL→numpy and back is done exactly once regardless of how
+        many faces are present, avoiding the O(n) allocation of the old loop.
+
+        Args:
+            img: PIL Image (RGB)
+            bboxes: List of face bounding boxes to blur
+
+        Returns:
+            New PIL Image with all specified regions blurred, or the original
+            image unchanged when bboxes is empty.
+        """
+        # FIX #7: Short-circuit when there is nothing to blur — avoids a full
+        # unnecessary numpy round-trip (PIL→ndarray→PIL) for images where all
+        # detections were filtered by the confidence threshold.
+        if not bboxes:
+            return img
+
+        img_array = np.array(img)  # one allocation for all faces
+        h, w = img_array.shape[:2]
+
+        ks = self.blur_strength
+        if ks % 2 == 0:   # kernel must be odd
+            ks += 1
+        kernel_size = (ks, ks)
+
+        padding = 10
+        for bbox in bboxes:
+            x1 = max(0, bbox.x - padding)
+            y1 = max(0, bbox.y - padding)
+            x2 = min(w, bbox.x + bbox.width + padding)
+            y2 = min(h, bbox.y + bbox.height + padding)
+            img_array[y1:y2, x1:x2] = cv2.GaussianBlur(
+                img_array[y1:y2, x1:x2],  # GaussianBlur never modifies src in-place
+                kernel_size,
+                sigmaX=0,
+                sigmaY=0
+            )
+
+        return Image.fromarray(img_array)  # one conversion back
+
+    def draw_faces(self, img: Image.Image, faces: List[FaceData]) -&gt; Image.Image:
+        """
+        Optionally blur faces and/or draw bounding-box annotations.
+
+        Blur (when enabled) is always applied before annotation so the box
+        and label are drawn on top of the already-blurred region.
+        When both blur_faces and annotate_faces are False this method returns
+        the original image object unchanged.
+
+        Args:
+            img: PIL Image (RGB)
+            faces: List of detected FaceData objects
+
+        Returns:
+            Processed image — may be a new object if blur was applied,
+            otherwise the original image (or a copy with annotations).
+        """
+        # Step 1: Blur all faces in ONE numpy round-trip
+        if self.blur_faces:
+            img = self._apply_gaussian_blur_all(img, [f.bounding_box for f in faces])
+
+        # Step 2: Draw bounding boxes and text labels (optional)
+        if not self.annotate_faces:
+            return img
+
+        # If we skipped blurring, `img` is still the original PIL object passed in.
+        # Create a copy so ImageDraw doesn't silently mutate the pristine original.
+        if not self.blur_faces:
+            img = img.copy()
+
+        draw = ImageDraw.Draw(img)
+
+        for face in faces:
+            bbox = face.bounding_box
+
+            # Colour coding: yellow = blurred, green = unblurred
+            box_color = 'yellow' if self.blur_faces else 'green'
+            draw.rectangle(
+                [(bbox.x, bbox.y),
+                 (bbox.x + bbox.width, bbox.y + bbox.height)],
+                outline=box_color,
+                width=3
+            )
+
+            # Build label: face ID + optional blur flag + confidence score
+            label = f"Face {face.face_id}"
+            if self.blur_faces:
+                label += " [BLURRED]"
+            if face.confidence is not None:
+                label += f" ({face.confidence:.1%})"
+
+            font = self._get_font(size=28)
+            text_xy = (bbox.x, max(0, bbox.y - 34))
+            # Solid colour background swatch makes the label legible on any image
+            text_bbox = draw.textbbox(text_xy, label, font=font)
+            draw.rectangle(text_bbox, fill=box_color)
+            draw.text(text_xy, label, fill='black', font=font)
+
+        return img
+
+
+class EmbeddingStorage:
+    """
+    Standardizes transactional persist/restore behavior matching complex embedding graphs.
+    Controls atomicity and schema formats required for high concurrency extraction workloads.
+    """
+    
+    def __init__(self, storage_path: str):
+        """
+        Calculates and maps optimal storage volumes on instantiation.
+
+        Args:
+            storage_path (str): Relative or absolute target path representing database location.
+        """
+        self.storage_path = Path(storage_path)
+        self.storage_path.mkdir(parents=True, exist_ok=True)
+    
+    def save_embeddings(self,
+                       filename: str,
+                       faces: List[FaceData],
+                       model_name: str,
+                       detector_name: str,
+                       metadata: Optional[Dict] = None) -&gt; str:
+        """
+        Executes an atomic persistence operation serializing detected tensors into JSON strings.
+
+        Args:
+            filename (str): The logical representation of the target asset.
+            faces (List[FaceData]): Comprehensive list spanning extraction nodes.
+            model_name (str): Identifier characterizing underlying transformation architecture.
+            detector_name (str): Configured logic targeting bounding extraction.
+            metadata (Optional[Dict]): Additional properties.
+
+        Returns:
+            str: Resolved string representing the finalized target URI address.
+        """
+        base_name = Path(filename).stem
+        json_path = self.storage_path / f"{base_name}_embeddings.json"
+
+        data = {
+            'filename': filename,
+            'num_faces': len(faces),
+            'model': model_name,
+            'detector': detector_name,
+            'processed_at': datetime.now(timezone.utc).isoformat(),
+            'faces': [face.to_dict() for face in faces],
+            'metadata': metadata or {}
+        }
+
+        # Atomic write: write to a sibling .tmp file then rename into place.
+        # A direct open(json_path, 'w') produces a corrupt/empty JSON if the
+        # process is interrupted mid-write.  os.replace() is atomic on POSIX
+        # and near-atomic (same-volume) on Windows.
+        tmp_path = json_path.with_suffix('.tmp')
+        try:
+            with open(tmp_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+            tmp_path.replace(json_path)
+        except Exception:
+            tmp_path.unlink(missing_ok=True)
+            raise
+
+        return str(json_path)
+
+    def load_all_embeddings(self) -&gt; Generator[Dict, None, None]:
+        """Yield embeddings one file at a time to avoid loading everything into RAM.
+
+        Skips corrupt or unreadable files with a logged warning so that a single
+        bad file does not abort the entire stream.
+        """
+        # FIX #10: Normalise sort key to lower-case for consistent cross-platform
+        # ordering. Windows NTFS directory listings are case-insensitive but
+        # Python's sorted() is not, leading to locale-dependent ordering.
+        for json_file in sorted(self.storage_path.glob('*_embeddings.json'),
+                                key=lambda p: p.name.lower()):
+            try:
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    yield json.load(f)
+            except (json.JSONDecodeError, OSError) as exc:
+                logger.warning(f"Skipping unreadable embeddings file {json_file.name}: {exc}")
+
+
+class DeepFaceDetector:
+    """
+    Face detection pipeline with in-memory ICC color conversion and
+    optional Gaussian privacy blurring.
+
+    Color management:
+    - Uses ImageCms.profileToProfile to remap pixel values to sRGB
+    - No temp files written to disk; image stays in memory throughout
+
+    Privacy:
+    - Optional Gaussian blur applied per-face via OpenCV
+    - Embeddings extracted before blur is applied
+    """
+    
+    def __init__(self,
+                 input_folder: str = 'images',
+                 output_folder: str = 'processed',
+                 embeddings_folder: str = 'embeddings',
+                 detector_backend: str = 'retinaface',
+                 model_name: str = 'Facenet512',
+                 normalize_color_profiles: bool = True,
+                 blur_faces: bool = True,
+                 blur_strength: int = 50,
+                 annotate_faces: bool = True,
+                 confidence_threshold: float = 0.7,
+                 skip_existing: bool = True,
+                 max_workers: int = 1,
+                 max_inference_size: int = 1920):
+        """
+        Initialize face detector.
+
+        Args:
+            input_folder: Source images directory
+            output_folder: Processed images output
+            embeddings_folder: Embeddings storage
+            detector_backend: DeepFace detector
+            model_name: Embedding model
+            normalize_color_profiles: Convert ICC profiles to sRGB (recommended)
+            blur_faces: Apply Gaussian blur for privacy protection
+            blur_strength: Blur radius (15-100, higher = more blur)
+            annotate_faces: Draw bounding boxes and text labels on detected faces.
+                            Set False to produce a clean output with no visual overlay
+                            (blur still applies when blur_faces=True).
+            confidence_threshold: Minimum detection confidence to keep (0.0-1.0)
+            skip_existing: Skip images already processed in output folder
+            max_workers: Number of parallel threads for batch processing.
+                         1 (default) = sequential, safe for all backends.
+                         &gt;1 = ThreadPoolExecutor; effective when IO dominates
+                         (large images, slow disks).  DeepFace model inference
+                         uses TF C++ ops that release the GIL, so modest
+                         speedups are possible.  Warm the model first with a
+                         dummy call if you use &gt;1 to avoid init race conditions.
+            max_inference_size: Longest edge (px) to which the image is downscaled
+                         before being passed to the detector. RetinaFace and other
+                         CNN detectors scale linearly with pixel count; a 24 MP image
+                         is ~9× slower than a 1920 px version with negligible accuracy
+                         loss at portrait distances.  Bounding boxes are mapped back
+                         to full-resolution coordinates for visualization and are
+                         never affected.  Set to 0 to disable resizing entirely.
+                         Default: 1920
+        """
+        if not 0.0 &lt;= confidence_threshold &lt;= 1.0:
+            raise ValueError(f"confidence_threshold must be 0.0–1.0, got {confidence_threshold}")
+        if blur_strength &lt; 1:
+            raise ValueError(f"blur_strength must be &gt;= 1, got {blur_strength}")
+        if max_workers &lt; 1:
+            raise ValueError(f"max_workers must be &gt;= 1, got {max_workers}")
+        if max_inference_size &lt; 0:
+            raise ValueError(f"max_inference_size must be &gt;= 0, got {max_inference_size}")
+
+        self.input_folder = Path(input_folder)
+        self.output_folder = Path(output_folder)
+        self.detector_backend = detector_backend
+        self.model_name = model_name
+        self.normalize_color_profiles = normalize_color_profiles
+        self.blur_faces = blur_faces
+        self.blur_strength = blur_strength
+        self.annotate_faces = annotate_faces
+        self.confidence_threshold = confidence_threshold
+        self.skip_existing = skip_existing
+        self.max_workers = max_workers
+        self.max_inference_size = max_inference_size
+
+        # Initialize components
+        self.validator = ImageValidator()
+        self.visualizer = FaceVisualizer(
+            blur_faces=blur_faces,
+            blur_strength=blur_strength,
+            annotate_faces=annotate_faces
+        )
+        self.storage = EmbeddingStorage(embeddings_folder)
+        self.color_manager = ColorProfileManager() if normalize_color_profiles else None
+
+        # Create output directory
+        self.output_folder.mkdir(parents=True, exist_ok=True)
+
+        # Log configuration
+        logger.info("=" * 60)
+        logger.info("FACE DETECTION PIPELINE")
+        logger.info("=" * 60)
+        logger.info(f"Detector: {detector_backend}")
+        _dim = self._get_embedding_dim(model_name)
+        _dim_str = f"{_dim}D" if _dim is not None else "unknown dims"
+        logger.info(f"Model: {model_name} ({_dim_str} vectors)")
+        logger.info(f"Confidence threshold: {confidence_threshold:.0%}")
+        logger.info(f"Color Profile Conversion: {'Enabled (ImageCms)' if normalize_color_profiles else 'Disabled'}")
+        logger.info(f"Privacy Mode (Face Blur): {'Enabled' if blur_faces else 'Disabled'}")
+        if blur_faces:
+            logger.info(f"  Blur Strength: {blur_strength}px Gaussian")
+        logger.info(f"Face Annotation (Box+Label): {'Enabled' if annotate_faces else 'Disabled'}")
+        logger.info(f"Skip existing: {skip_existing}")
+        logger.info(f"Parallel workers: {max_workers}")
+        _inf_size = f"{max_inference_size}px" if max_inference_size &gt; 0 else "disabled"
+        logger.info(f"Inference resize: {_inf_size} (longest edge)")
+        logger.info("=" * 60)
+    
+    @staticmethod
+    def _face_confidence(r: dict) -&gt; float:
+        """
+        Extract detection confidence from a DeepFace result dict.
+
+        DeepFace backends expose the score under different keys depending on
+        version; this normalises them into a single float.  Returns 1.0 when
+        no confidence is reported so that backends that omit the field never
+        inadvertently filter out valid detections.
+        """
+        v = r.get('face_confidence')
+        if v is not None:
+            return float(v)
+        v = r.get('confidence')
+        if v is not None:
+            return float(v)
+        return 1.0  # backend didn't report confidence – keep by default
+
+    @staticmethod
+    def _get_embedding_dim(model_name: str) -&gt; Optional[int]:
+        """Return embedding vector size for the given model name, or None if unknown.
+
+        FIX #12: Previously returned Union[int, str] ('unknown' for missing keys),
+        which forced every caller to type-check the return value. Optional[int]
+        (None for unknown) is idiomatic Python and plays well with type checkers.
+        """
+        dims: Dict[str, int] = {
+            'Facenet512': 512,
+            'Facenet': 128,
+            'ArcFace': 512,
+            'VGG-Face': 2622,
+            'DeepFace': 4096,
+            'OpenFace': 128,
+            'SFace': 128,
+            'GhostFaceNet': 512,
+            'Dlib': 128,
+            'DeepID': 160,
+        }
+        return dims.get(model_name)  # returns None for unknown models
+    
+    def _load_and_normalize(self, image_path: Path) -&gt; Tuple[Image.Image, str]:
+        """
+        Load image and normalize its color profile in memory.
+
+        Returns a PIL Image in RGB mode with corrected color space.
+        The caller owns the returned image object.
+        No temporary files are written to disk.
+
+        Returns:
+            (pil_image, status_message)
+        """
+        img = Image.open(image_path)
+        try:
+            # Apply EXIF orientation before any processing.  PIL loads raw
+            # pixel rows and ignores the rotation tag; without this, a portrait
+            # shot stored as landscape+EXIF-rotate-90 will be processed sideways
+            # and faces will be missed or have wrong bounding boxes.
+            # exif_transpose may return a NEW image (when a transpose is needed);
+            # explicitly close the original to avoid orphaning the file handle.
+            transposed = ImageOps.exif_transpose(img)
+            if transposed is not img:
+                img.close()
+            img = transposed
+
+            if not self.normalize_color_profiles or not self.color_manager:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                return img, "Using original"
+
+            img_normalized, status = self.color_manager.normalize_color_profile(img)
+            if img_normalized is not img:
+                img.close()
+            return img_normalized, status
+        except Exception:
+            img.close()
+            raise
+    
+    def detect_and_extract(self, image_path: Path) -&gt; ProcessingResult:
+        """
+        Orchestrates bounding detection, feature normalization, and vectorization logic.
+        Validates target structures, enforces programmatic thresholds, and interfaces
+        with configured computational dependencies.
+
+        Args:
+            image_path (Path): Path referencing the raw file payload.
+
+        Returns:
+            ProcessingResult: The immutable summary status mapping operational outcome.
+        """
+        filename = image_path.name
+
+        # Validate image
+        is_valid, error_msg = self.validator.is_valid_image(image_path)
+        if not is_valid:
+            logger.warning(f"Skipping {filename}: {error_msg}")
+            return ProcessingResult(
+                filename=filename, num_faces=0,
+                output_path=None, embeddings_path=None,
+                success=False, error_message=error_msg
+            )
+
+        output_path = self.output_folder / filename
+
+        # Skip already-processed images
+        if self.skip_existing and output_path.exists():
+            logger.info(f"  Skipping {filename} (already processed)")
+            return ProcessingResult(
+                filename=filename, num_faces=0,
+                output_path=str(output_path), embeddings_path=None,
+                success=True, error_message=_SKIP_MSG
+            )
+
+        img: Optional[Image.Image] = None  # defined here so except can safely close it
+        try:
+            # Load + normalize in memory – no temp files, no double disk read
+            img, color_status = self._load_and_normalize(image_path)
+            # Capture format before any conversion strips it
+            img_format = image_path.suffix.lstrip('.').upper()
+            img_width, img_height = img.size
+            logger.info(f"Processing {filename} ({color_status})...")
+
+            # DeepFace receives a numpy array. By default, PIL Images are RGB, but 
+            # DeepFace internal processors (like RetinaFace/OpenCV) expect BGR.
+            img_array = np.array(img)
+            img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+
+            # Pre-resize for inference: downscale large images so the detector
+            # works on fewer pixels. RetinaFace/MTCNN complexity scales with
+            # image area — a 24 MP photo is ~9× slower than a 1920 px version
+            # with no meaningful accuracy loss at normal portrait distances.
+            # Bboxes returned by DeepFace are in resized coordinates; scale_x/y
+            # maps them back to the original full-resolution space afterward.
+            h_orig, w_orig = img_bgr.shape[:2]
+            scale_x = scale_y = 1.0
+            if self.max_inference_size &gt; 0 and max(h_orig, w_orig) &gt; self.max_inference_size:
+                _scale = self.max_inference_size / max(h_orig, w_orig)
+                new_w = max(1, int(w_orig * _scale))
+                new_h = max(1, int(h_orig * _scale))
+                img_bgr_inf = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                scale_x = w_orig / new_w
+                scale_y = h_orig / new_h
+                logger.debug(f"  Inference resize: {w_orig}x{h_orig} → {new_w}x{new_h}")
+            else:
+                img_bgr_inf = img_bgr
+
+            results = DeepFace.represent(
+                img_path=img_bgr_inf,
+                model_name=self.model_name,
+                detector_backend=self.detector_backend,
+                enforce_detection=False
+            )
+
+            # Filter by confidence threshold.
+            # Use explicit `is not None` to avoid the falsy-zero trap where a
+            # 0.0 confidence value falls through `or` and becomes 1.0.
+            results = [r for r in results if self._face_confidence(r) &gt;= self.confidence_threshold]
+
+            if not results:
+                logger.warning(f"No faces detected in {filename} (above threshold {self.confidence_threshold:.0%})")
+                img.close()
+                return ProcessingResult(
+                    filename=filename, num_faces=0,
+                    output_path=None, embeddings_path=None,
+                    success=True, error_message='no faces detected'
+                )
+
+            # Extract face data.
+            # Cast coordinates to int – some backends return floats which
+            # cause TypeError in numpy slice indexing.
+            faces = []
+            for idx, face in enumerate(results):
+                facial_area = face['facial_area']
+                # Retrieve confidence: prefer face_confidence, fall back to confidence.
+                # Always cast to float so FaceData.confidence is truly Optional[float].
+                raw_conf = face.get('face_confidence')
+                if raw_conf is None:
+                    raw_conf = face.get('confidence')
+                confidence = float(raw_conf) if raw_conf is not None else None
+                faces.append(FaceData(
+                    face_id=idx + 1,
+                    bounding_box=BoundingBox(
+                        # Scale coords back to original full-resolution space
+                        x=int(facial_area['x'] * scale_x),
+                        y=int(facial_area['y'] * scale_y),
+                        width=int(facial_area['w'] * scale_x),
+                        height=int(facial_area['h'] * scale_y)
+                    ),
+                    embedding=face['embedding'],
+                    confidence=confidence
+                ))
+
+            # Use the already-normalized in-memory image for visualization.
+            # draw_faces may return img itself (no blur) or a new object (blur).
+            # Close img AFTER saving to avoid corrupting mmap-backed images.
+            img_processed = self.visualizer.draw_faces(img, faces)
+
+            # Save processed image (no ICC profile – sRGB assumed by viewers)
+            if self.color_manager:
+                self.color_manager.save_with_standard_profile(
+                    img_processed, str(output_path)
+                )
+            else:
+                # color_manager disabled — apply format-specific save args directly
+                _ext = Path(output_path).suffix.lower()
+                save_kwargs = {}
+                if _ext in ('.jpg', '.jpeg'):
+                    save_kwargs = {'quality': 90, 'exif': b''}
+                elif _ext == '.webp':
+                    save_kwargs = {'quality': 90, 'method': 6}
+                elif _ext == '.png':
+                    save_kwargs = {'compress_level': 6}
+
+                img_processed.save(str(output_path), **save_kwargs)
+
+            # Safe to close only after save is complete
+            if img_processed is not img:
+                img_processed.close()
+            img.close()
+
+            # Save embeddings with image metadata
+            metadata = {
+                'width': img_width,
+                'height': img_height,
+                'format': img_format,
+                'faces_blurred': self.blur_faces,
+                'color_status': color_status,
+            }
+            embeddings_path = self.storage.save_embeddings(
+                filename, faces, self.model_name,
+                self.detector_backend, metadata
+            )
+
+            blur_note = " [FACES BLURRED]" if self.blur_faces else ""
+            logger.info(f"\u2713 {filename}: {len(faces)} face(s) detected{blur_note}")
+
+            return ProcessingResult(
+                filename=filename,
+                num_faces=len(faces),
+                output_path=str(output_path),
+                embeddings_path=embeddings_path
+            )
+
+        except Exception as e:
+            # Ensure the image handle is released even on failure.
+            # img is initialised to None above so this is always safe.
+            if img is not None:
+                try:
+                    img.close()
+                except Exception:
+                    pass
+            logger.exception(f"\u2717 {filename}: {str(e)}")
+            return ProcessingResult(
+                filename=filename, num_faces=0,
+                output_path=None, embeddings_path=None,
+                success=False, error_message=str(e)
+            )
+    
+    def process_folder(self) -&gt; List[ProcessingResult]:
+        """
+        Calculates and maps batch iterators targeting configured filesystem objects.
+
+        Dynamically configures multithreading capacities matching underlying logical 
+        core requirements via ThreadPoolExecutor contexts, optimizing I/O-intensive payloads.
+
+        Returns:
+            List[ProcessingResult]: An order-preserved collection logging deterministic metrics.
+        """
+        # FIX #3: Validate input_folder exists before calling iterdir().
+        # Without this check, a missing folder raises a bare FileNotFoundError
+        # with no actionable message pointing at the configuration.
+        if not self.input_folder.exists():
+            raise FileNotFoundError(
+                f"Input folder not found: {self.input_folder.resolve()}"
+            )
+        if not self.input_folder.is_dir():
+            raise NotADirectoryError(
+                f"Input path is not a directory: {self.input_folder.resolve()}"
+            )
+
+        image_files = sorted(
+            f for f in self.input_folder.iterdir()
+            if f.suffix.lower() in ImageValidator.SUPPORTED_FORMATS
+        )
+
+        if not image_files:
+            logger.warning(f"No images found in {self.input_folder}")
+            return []
+
+        logger.info(f"\nFound {len(image_files)} images")
+        logger.info("Starting batch processing...\n")
+
+        results: List[ProcessingResult] = []
+
+        if self.max_workers &gt; 1:
+            logger.info("Warming up models to prevent parallel initialization race conditions...")
+            try:
+                # Create a 64x64 sequential dummy representation
+                dummy_img = np.zeros((64, 64, 3), dtype=np.uint8)
+                _ = DeepFace.represent(
+                    img_path=dummy_img,
+                    model_name=self.model_name,
+                    detector_backend=self.detector_backend,
+                    enforce_detection=False
+                )
+            except Exception as e:
+                logger.warning(f"Model warmup failed (this might be normal for dummy images): {e}")
+
+            # Parallel path – ThreadPoolExecutor lets TF C++ ops release the GIL
+            # and overlaps disk IO with inference from other threads.
+            # Declare unsorted before the with-block so the final sort step is
+            # clearly outside the executor scope (data-flow is explicit).
+            unsorted: Dict[Path, ProcessingResult] = {}
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.max_workers
+            ) as executor:
+                futures = {
+                    executor.submit(self.detect_and_extract, p): p
+                    for p in image_files
+                }
+                iterator = (
+                    tqdm(concurrent.futures.as_completed(futures),
+                         total=len(futures), desc="Processing", unit="img")
+                    if _TQDM_AVAILABLE
+                    else concurrent.futures.as_completed(futures)
+                )
+                # FIX #9: Wrap future.result() in try/except so that any
+                # exception not caught inside detect_and_extract does not crash
+                # the entire batch loop; it is recorded as a failed result instead.
+                for future in iterator:
+                    path = futures[future]
+                    try:
+                        unsorted[path] = future.result()
+                    except Exception as exc:
+                        logger.error(
+                            f"Unhandled worker exception for {path.name}: {exc}"
+                        )
+                        unsorted[path] = ProcessingResult(
+                            filename=path.name, num_faces=0,
+                            output_path=None, embeddings_path=None,
+                            success=False, error_message=str(exc)
+                        )
+            results = [unsorted[p] for p in image_files]
+        else:
+            # Sequential path (default) – safe for all backends
+            iterator = (
+                tqdm(image_files, desc="Processing", unit="img")
+                if _TQDM_AVAILABLE
+                else image_files
+            )
+            for image_path in iterator:
+                result = self.detect_and_extract(image_path)
+                results.append(result)
+
+        return results
+
+    # Context manager support
+    def __enter__(self) -&gt; 'DeepFaceDetector':
+        return self
+
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -&gt; None:
+        pass  # No resources to release; context manager kept for safe `with` usage
+
+
+# Sentinel used to identify images that were intentionally skipped during
+# batch processing (already present in the output folder).
+_SKIP_MSG = 'skipped (already exists)'
+
+
+def main():
+    """
+    Bootstraps the orchestration process mapping high-level user parameters.
+    Instantiates primary configuration interfaces guiding feature extraction capabilities
+    and controlling localized structural data processing rules. Intended as a CLI entrypoint.
+
+    Core Execution Scopes:
+    - Colorimetric Standardizing (ICC -&gt; sRGB) via progressive fallback logic.
+    - Convolutional Vector Operations scaling facial geometries into defined semantic nodes.
+    - Obfuscation and Graphical Visualization (Bounding box rendering).
+    """
+    # FIX #13: Accept CLI arguments instead of hardcoding values so the script
+    # can be driven from the shell without editing source.
+    parser = argparse.ArgumentParser(
+        description='Face Detection &amp; Embedding Extraction Pipeline'
+    )
+    parser.add_argument('--input',       default='smallsample', help='Source images folder')
+    parser.add_argument('--output',      default='processed',   help='Processed images folder')
+    parser.add_argument('--embeddings',  default='embeddings',  help='Embeddings output folder')
+    parser.add_argument('--detector',    default='retinaface',  help='DeepFace detector backend')
+    parser.add_argument('--model',       default='Facenet512',  help='Embedding model name')
+    parser.add_argument('--threshold',   default=0.7, type=float, help='Confidence threshold (0.0-1.0)')
+    parser.add_argument('--no-blur',      action='store_false', dest='blur', default=True,
+                                          help='Disable face blurring (blur is ON by default)')
+    parser.add_argument('--blur-strength', default=50, type=int, dest='blur_strength', help='Gaussian blur radius')
+    parser.add_argument('--no-annotate',  action='store_false', dest='annotate', default=True,
+                                          help='Disable bounding box and label annotation (annotation is ON by default)')
+    parser.add_argument('--workers',      default=min(4, os.cpu_count() or 1), type=int,
+                                          help='Parallel worker threads (default: min(4, cpu_count))')
+    parser.add_argument('--max-inference-size', default=1920, type=int, dest='max_inference_size',
+                                          help='Longest edge to resize to before detection (0=disable, default: 1920)')
+    parser.add_argument('--no-skip',     action='store_true',   help='Re-process already-existing outputs')
+    parser.add_argument('--no-color',    action='store_true',   help='Disable ICC color profile normalization')
+    args = parser.parse_args()
+
+    # ============================================================
+    # CONFIGURATION
+    # ============================================================
+    with DeepFaceDetector(
+        input_folder=args.input,
+        output_folder=args.output,
+        embeddings_folder=args.embeddings,
+        detector_backend=args.detector,
+        model_name=args.model,
+        normalize_color_profiles=not args.no_color,
+        blur_faces=args.blur,
+        blur_strength=args.blur_strength,
+        annotate_faces=args.annotate,
+        confidence_threshold=args.threshold,
+        skip_existing=not args.no_skip,
+        max_workers=args.workers,
+        max_inference_size=args.max_inference_size,
+    ) as detector:
+    # ============================================================
+
+        results = detector.process_folder()
+
+        # Split results by outcome.
+        # Use the module-level _SKIP_MSG constant – avoids silent mismatch if
+        # the string ever changes in detect_and_extract.
+        successful = [r for r in results if r.success and r.num_faces &gt; 0]
+        skipped    = [r for r in results if r.success and r.error_message == _SKIP_MSG]
+        no_faces   = [r for r in results if r.success and r.error_message == 'no faces detected']
+        failed     = [r for r in results if not r.success]
+
+        logger.info("\n" + "=" * 60)
+        logger.info("PROCESSING SUMMARY")
+        logger.info("=" * 60)
+        logger.info(f"Total images:    {len(results)}")
+        logger.info(f"Faces detected:  {len(successful)} images  ({sum(r.num_faces for r in successful)} faces)")
+        logger.info(f"No faces found:  {len(no_faces)}")
+        logger.info(f"Skipped (exist): {len(skipped)}")
+        logger.info(f"Errors:          {len(failed)}")
+
+        if detector.blur_faces:
+            logger.info(f"Privacy: all faces blurred (Gaussian {detector.blur_strength}px)")
+
+        if failed:
+            logger.warning("\nFailed images:")
+            for r in failed:
+                logger.warning(f"  - {r.filename}: {r.error_message}")
+
+        logger.info("\nOutputs:")
+        logger.info(f"  Images:     {detector.output_folder}/")
+        logger.info(f"  Embeddings: {detector.storage.storage_path}/")
+        logger.info("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
+
+"""
+Developer: Humprey Cogay
+Date: March 15, 2026
+Version: V11
+====================================================================================================
+Configuration Parameter Documentation for DeepFaceDetector Interface
+====================================================================================================
+
+All parameters below are accepted by DeepFaceDetector.__init__() and are also accessible as
+CLI flags when running the script directly (see CLI Usage section at the end of this block).
+
+----------------------------------------------------------------------------------------------------
+Constructor / CLI Parameters
+----------------------------------------------------------------------------------------------------
+
+input_folder (str)          CLI: --input &lt;path&gt;
+    The relative or absolute directory path containing the source image payload intended for
+    ingestion. The folder is validated at runtime; a clear FileNotFoundError or
+    NotADirectoryError is raised if the path does not exist or is not a directory.
+    Default: 'smallsample'
+    Example: 'images'
+
+output_folder (str)         CLI: --output &lt;path&gt;
+    The designated directory where processed visual assets (images annotated with bounding boxes
+    and/or blurred faces) will be persisted. Created automatically if absent.
+    Default: 'processed'
+
+embeddings_folder (str)     CLI: --embeddings &lt;path&gt;
+    The target directory where serialised facial embeddings are exported as JSON files, one per
+    source image, using atomic write (tmp → rename) to protect against mid-write corruption.
+    Default: 'embeddings'
+
+detector_backend (str)      CLI: --detector &lt;name&gt;
+    The backend architecture used to locate face bounding boxes within each image.
+    Options: 'retinaface' (recommended, highest accuracy), 'opencv', 'ssd', 'mtcnn', 'dlib'.
+    Default: 'retinaface'
+
+model_name (str)            CLI: --model &lt;name&gt;
+    The deep convolutional model used to vectorize each detected face into an embedding.
+    Known output dimensions (used for logging):
+        Facenet512 → 512D  |  Facenet → 128D  |  ArcFace → 512D  |  VGG-Face → 2622D
+        DeepFace → 4096D   |  OpenFace → 128D  |  SFace → 128D   |  GhostFaceNet → 512D
+        Dlib → 128D        |  DeepID → 160D
+    Unknown model names are accepted; embedding dimension logs as 'unknown dims'.
+    Default: 'Facenet512'
+
+normalize_color_profiles (bool)     CLI: --no-color  (flag disables normalization)
+    When True, ColorProfileManager converts any embedded ICC profile (AdobeRGB, ProPhoto, etc.)
+    to standard sRGB via ImageCms.profileToProfile before inference. Prevents color shifts that
+    occur when profiles are merely stripped.  Falls back gracefully if the ICC data is corrupt.
+    Disable only when input images are guaranteed to already be sRGB.
+    Default: True
+
+blur_faces (bool)           CLI: --no-blur  (flag disables blurring)
+    When True, applies a Gaussian blur kernel over every detected face bounding box before saving
+    the output image. Embeddings are always extracted from the unblurred image first.
+    Default: True  (use --no-blur to disable)
+
+annotate_faces (bool)       CLI: --no-annotate  (flag disables annotation)
+    When True, draws a coloured bounding box and a text label (Face ID, blur flag, confidence %)
+    over each detected face in the output image. The label background is green for unblurred
+    detections and yellow when blur_faces=True.
+    When False, the output image is saved clean — no boxes, no text — only optional blur applies.
+    annotate_faces and blur_faces are fully independent; all four combinations are valid:
+        annotate=True,  blur=True   → blurred regions + yellow box + label      (default)
+        annotate=True,  blur=False  → unblurred + green box + label
+        annotate=False, blur=True   → blurred regions only, no overlay
+        annotate=False, blur=False  → clean pass-through (color correction only)
+    Default: True  (use --no-annotate to disable)
+
+blur_strength (int)         CLI: --blur-strength &lt;int&gt;
+    Gaussian blur kernel radius applied when blur_faces=True. Must be &gt;= 1; odd values are used
+    directly, even values are incremented by 1 (OpenCV requires odd kernel sizes).
+    Default: 50  |  Range: 1–100+ (higher = stronger blur)
+
+confidence_threshold (float)    CLI: --threshold &lt;float&gt;
+    Minimum face detection confidence score to accept a detection (0.0–1.0). Faces scoring below
+    this value are discarded before embedding extraction and visualization.
+    Backends that do not report a confidence score are assigned 1.0 by default (always kept).
+    Default: 0.7 (70%)
+
+skip_existing (bool)        CLI: --no-skip  (flag disables skip logic)
+    When True, any image whose output file already exists in output_folder is skipped entirely,
+    avoiding redundant re-processing. Useful for resuming interrupted batch runs.
+    Default: True
+
+max_workers (int)           CLI: --workers &lt;int&gt;
+    Number of parallel worker threads for batch processing.
+    Sequential when 1; uses ThreadPoolExecutor for higher values.
+    TF C++ ops release the GIL so parallel threads genuinely overlap IO and inference.
+    When using &gt;1, the pipeline automatically warms up the model with a dummy image first to
+    prevent TF initialization race conditions across threads.
+    Default: min(4, os.cpu_count())  — auto-scales to available cores, capped at 4
+
+max_inference_size (int)    CLI: --max-inference-size &lt;int&gt;
+    Longest edge (pixels) to which the source image is downscaled before being passed to
+    the detector. CNN-based detectors (RetinaFace, MTCNN) scale in complexity with image
+    area; a 24 MP photo is ~9× slower than a 1920 px version with negligible accuracy loss
+    at normal portrait distances. The downscale is applied to the numpy array only; the
+    original PIL image is untouched and is used for visualization and saving at full
+    resolution. Bounding box coordinates returned by DeepFace are automatically scaled
+    back to full-resolution space before being stored or drawn.
+    Set to 0 to disable resizing entirely (original resolution passed to detector).
+    Default: 1920
+
+----------------------------------------------------------------------------------------------------
+CLI Usage Examples
+----------------------------------------------------------------------------------------------------
+
+Run with defaults (smallsample → processed, blur ON, annotation ON, workers=min(4,cpu_count)):
+    py facedetection.py
+
+Disable blur only (bounding boxes and labels still drawn):
+    py facedetection.py --no-blur
+
+Disable annotation only (blurred output, no overlay drawn):
+    py facedetection.py --no-annotate
+
+Clean pass-through — color correction only, no blur, no overlay:
+    py facedetection.py --no-blur --no-annotate
+
+Custom input/output, 70% confidence:
+    py facedetection.py --input images --output out --threshold 0.7
+
+Re-process images that were already saved unblurred:
+    py facedetection.py --no-skip
+
+Use ArcFace model with MTCNN detector, 8 workers:
+    py facedetection.py --model ArcFace --detector mtcnn --workers 8
+
+Disable color normalization (already-sRGB source images):
+    py facedetection.py --no-color
+
+Force full-resolution inference (disable pre-resize, slowest but maximum accuracy):
+    py facedetection.py --max-inference-size 0
+
+Smaller inference window for faster throughput on very large images:
+    py facedetection.py --max-inference-size 1280
+
+====================================================================================================
+Architecture &amp; Module Overview
+====================================================================================================
+
+Public API  (__all__)
+---------------------
+BoundingBox       – Dataclass: x, y, width, height of a detected face region.
+FaceData          – Dataclass: face_id, bounding_box, embedding (List[float]), confidence.
+ProcessingResult  – Dataclass: per-image outcome (filename, num_faces, paths, success flag).
+ColorProfileManager  – ICC→sRGB conversion via ImageCms.profileToProfile.
+ImageValidator    – Format/size/decode validation before any processing is attempted.
+FaceVisualizer    – Bounding box drawing + optional Gaussian face blur (single numpy round-trip).
+EmbeddingStorage  – Atomic JSON persistence and lazy-streaming loader for embedding files.
+DeepFaceDetector  – Top-level orchestrator; accepts all configuration; context-manager safe.
+
+----------------------------------------------------------------------------------------------------
+Core Features
+----------------------------------------------------------------------------------------------------
+
+1. Face Detection &amp; Embedding Extraction
+   Uses DeepFace.represent() with enforce_detection=False and a configurable backend/model pair.
+   The pipeline converts PIL RGB → OpenCV BGR before passing the array to DeepFace so that all
+   backends receive the expected channel order. Each detection is filtered by confidence_threshold
+   before any downstream work begins.  Backends that omit a confidence score return 1.0 (kept).
+   Embedding dimension is reported at startup via _get_embedding_dim() → Optional[int]; unknown
+   models are accepted and logged as 'unknown dims' rather than crashing.
+
+2. In-Memory ICC Color Normalization (ColorProfileManager)
+   Converts any embedded ICC profile (AdobeRGB, ProPhoto RGB, etc.) to linear sRGB using
+   ImageCms.profileToProfile with RELATIVE_COLORIMETRIC intent — preserving photographic hues
+   better than the perceptual default.  Three-level fallback:
+     a) Full ICC conversion (profileToProfile)
+     b) No-ICC path: mode-convert to RGB and proceed
+     c) Corrupt ICC fallback: strip profile, paste pixels into a clean RGB canvas
+   Output images are saved without an ICC tag so downstream viewers assume sRGB natively.
+   PNG files are saved with compress_level=6 only (no exif= kwarg — unsupported by PNG in many
+   Pillow versions).  JPEG/WebP files receive quality=90 + exif=b'' to strip metadata.
+
+3. EXIF Orientation Correction
+   ImageOps.exif_transpose() is applied immediately after load, before any inference or color
+   conversion. This ensures portrait images stored as landscape + EXIF-rotate-90 are processed
+   with the correct pixel orientation, preventing missed / misaligned face detections.
+
+4. Privacy Blurring &amp; Annotation (FaceVisualizer)
+   Gaussian blur and bounding-box annotation are independently controlled via blur_faces and
+   annotate_faces. Both default to True (blur on, annotation on); each can be disabled
+   separately with --no-blur / --no-annotate.  Blur is always applied before annotation so
+   box and label are drawn on top of the blurred region.  If no faces pass the confidence
+   filter the numpy round-trip is skipped entirely (early return on empty bboxes).  Embeddings
+   are always extracted from the original unblurred pixel data before any visual processing.
+   Annotation colours: green box = unblurred detection, yellow box = blurred detection.
+   Label format: "Face &lt;id&gt; [BLURRED] (&lt;confidence%&gt;)" — each part omitted when not applicable.
+
+5. Atomic Embedding Persistence (EmbeddingStorage)
+   JSON is written to a sibling .tmp file and then renamed into place (tmp_path.replace()).
+   os.replace() is atomic on POSIX and near-atomic (same-volume) on Windows, so interrupted
+   runs never leave corrupt or zero-byte embedding files on disk.
+   load_all_embeddings() is a generator that yields one file at a time (memory-safe for large
+   embedding libraries). Sort key is normalised to lower-case for consistent cross-platform
+   ordering on case-insensitive file systems (e.g. Windows NTFS).
+
+6. Input Validation (ImageValidator)
+   Checks extension allowlist, file size ceiling (200 MB), then calls img.verify() (header-only
+   decode) to detect structurally corrupt files without performing a redundant full pixel decode —
+   the full decode happens once inside detect_and_extract anyway.  Corrupt or truncated files are
+   rejected with a descriptive message and logged as failed results rather than raising unhandled
+   exceptions.  process_folder() also validates that input_folder exists and is a directory before
+   calling iterdir(), providing a clear error when the configured path is incorrect.
+
+7. Inference Pre-Resize (max_inference_size)
+   Before calling DeepFace.represent(), the BGR numpy array is optionally downscaled so its
+   longest edge does not exceed max_inference_size (default: 1920 px). The resize uses
+   cv2.INTER_AREA for high-quality downsampling. Scale factors (scale_x, scale_y) are recorded
+   and applied to every bbox coordinate returned by the detector, mapping them back to full
+   original-resolution space. The PIL image used for visualization and saving is never resized.
+   Setting max_inference_size=0 disables the feature entirely (original resolution used).
+   Typical speedup on 24 MP images: ~5–9× over no resize, with negligible accuracy loss.
+
+8. Parallel Batch Processing
+   max_workers defaults to min(4, os.cpu_count()) — auto-scales to available cores, capped at 4
+   to avoid overwhelming the TF session pool.  Uses ThreadPoolExecutor; TF C++ ops release the
+   GIL so threads genuinely overlap disk I/O with inference.  Model warmup (dummy image) runs
+   before spawning workers to prevent TF session initialization race conditions.  futures are
+   collected via as_completed(); each is individually wrapped in try/except so an unhandled
+   exception in one worker produces a ProcessingResult(success=False) rather than aborting the
+   entire batch loop.  Results are re-sorted to original filesystem order after collection.
+
+9. CLI Entrypoint (argparse)
+   main() accepts all DeepFaceDetector parameters as named CLI flags with sensible defaults.
+   The script can be run without any arguments (defaults to smallsample → processed) or driven
+   entirely from the command line without editing source code.
+   See the Configuration Parameter Documentation section above for full flag reference.
+   Workers default to min(4, cpu_count) and inference resize to 1920 px for optimal
+   out-of-the-box batch throughput without requiring any manual tuning.
+
+====================================================================================================
+Future Improvement Considerations (V2 Roadmap)
+====================================================================================================
+
+1. Vector Database Integration:
+   Transitioning from localized `.json` embedding files to a memory-mapped vector database (such as 
+   Milvus, Pinecone, or pgvector) to enable sub-millisecond facial similarity searching and clustering 
+   across thousands of indices.
+
+2. Dynamic GPU Strategy Mapping:
+   Currently suppressing TensorFlow warnings. Future states could dynamically map inference 
+   contexts leveraging hardware APIs (CUDA/TensorRT) detecting local GPU instances, and scaling the 
+   `max_workers` safely across VRAM capacities rather than static threading.
+
+3. Model-Level Batch Inference:
+   Per-image inference pre-resizing (max_inference_size) is now implemented and provides a
+   significant pixel-level speedup.  The next performance tier is true model-level batching:
+   passing a stacked array of face crops directly to the embedding model in a single forward
+   pass, eliminating per-face TF session overhead and enabling GPU batching when VRAM allows.
+
+4. Exif Orientation &amp; Metadata Handling:
+   Propagate EXIF date/time and GPS tags to the output visualization images implicitly while 
+   still deliberately stripping destructive profiles (current state drops all EXIFs indiscriminately).
+"""
+</code></pre>
+    </div>
+
+    <script>
+        (function(){
+            const visibleCodeEl = document.getElementById('visibleCode');
+            const rawCodeText = visibleCodeEl.innerText.replace(/\u00A0/g, '');
+
+            document.getElementById('copyBtn').addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(rawCodeText); alert('Code copied to clipboard'); }
+                catch(err){ alert('Copy failed: ' + err); }
+            });
+
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                const blob = new Blob([rawCodeText], { type: 'text/x-python' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'facedetection.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            });
+        })();
+    </script>
+  </div>
+</body>
+</html>

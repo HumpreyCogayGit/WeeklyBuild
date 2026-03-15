@@ -16,6 +16,17 @@ const HomePage = ({ isVisible }) => {
                                 <h2>Recent Posts</h2>
                                 
                                 <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>March 8, 2026:</strong> &nbsp;
+                                    <a
+                                        href="./src/projects/facedetection.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Face Detection
+                                    </a>
+                                    — A Python-based real-time face detection tool leveraging TensorFlow and OpenCV, capable of identifying and tracking multiple faces in images and video streams.
+                                </div>
+                                <div style={{ marginBottom: '1.5em' }}>
                                     <strong>January 15, 2026:</strong> &nbsp;
                                     <a
                                         href="./src/projects/aiimagedetection.html"

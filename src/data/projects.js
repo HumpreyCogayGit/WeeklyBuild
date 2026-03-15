@@ -12,6 +12,37 @@ const PROJECTS_DATA = {
             icon: '',
             projects: [
                 {
+                    id: 'facedetection',
+                    slug: 'facedetection',
+                    title: 'Face Detection',
+                    subtitle: 'Real-Time Face Detection (Python)',
+                    description: 'A Python-based real-time face detection tool leveraging TensorFlow and OpenCV, capable of identifying and tracking multiple faces in images and video streams.',
+                    status: 'completed',
+                    date: '2026-03-08',
+                    technologies: ['Python', 'TensorFlow', 'OpenCV', 'NumPy', 'Computer Vision'],
+                    overview: 'Uses deep learning models loaded via TensorFlow to detect and localise faces in images and video, drawing bounding boxes with confidence scores.',
+                    problem: 'Accurately detect and locate one or more human faces in arbitrary images and live video frames in real time.',
+                    solution: 'Integrates a pre-trained TensorFlow face detection model with OpenCV for frame capture and rendering, producing annotated outputs with bounding boxes and confidence scores.',
+                    challenges: [
+                        'Suppressing TensorFlow/Keras deprecation noise during initialisation',
+                        'Handling variable image sizes and aspect ratios',
+                        'Balancing detection accuracy against processing speed'
+                    ],
+                    learnings: [
+                        'Loading and running TensorFlow models in Python',
+                        'OpenCV frame capture and annotation techniques',
+                        'Managing deep learning dependencies and environment setup'
+                    ],
+                    futureImprovements: [
+                        'Add facial landmark and emotion detection',
+                        'Provide a web-based frontend for drag-and-drop image analysis',
+                        'Optimise with TensorFlow Lite for edge deployment'
+                    ],
+                    github: '',
+                    demo: './src/projects/facedetection.html',
+                    featured: true
+                },
+                {
                     id: 'aiimagedetection',
                     slug: 'aiimagedetection',
                     title: 'AI Image Detection',
