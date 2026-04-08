@@ -4,10 +4,10 @@
  * Helps verify when the page was last updated
  */
 const Footer = () => {
-    const version = '1.0.0';
+    const version = '1.0.1';
     // Build metadata: update these when you deploy a new version
-    const buildDate = '2026-01-15T00:00:00.000Z';
-    const buildNumber = '202601150001';
+    const buildDate = '2026-04-08T00:00:00.000Z';
+    const buildNumber = '202604080001';
     
     // Format date for display
     const formatDate = (isoString) => {

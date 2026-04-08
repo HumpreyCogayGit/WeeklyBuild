@@ -43,7 +43,6 @@ const NavPane = ({ isVisible, currentPage, onNavigate }) => {
 
     const menuItems = [
         { id: 'home', label: 'Home', href: '#home' },
-        { id: 'projects', label: 'Projects', href: '#projects' },
         { id: 'about', label: 'About', href: '#about' }
     ];
 

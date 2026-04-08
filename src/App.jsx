@@ -48,8 +48,6 @@ const App = () => {
         switch(currentPage) {
             case 'home':
                 return <HomePage isVisible={contentVisible} />;
-            case 'projects':
-                return <ProjectsPage isVisible={contentVisible} onNavigate={handleNavigate} />;
             case 'about':
                 return <AboutPage isVisible={contentVisible} />;
             default:

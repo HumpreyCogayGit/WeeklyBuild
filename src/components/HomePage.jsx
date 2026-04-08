@@ -14,7 +14,19 @@ const HomePage = ({ isVisible }) => {
 
                         <section className="recent-posts">
                                 <h2>Recent Posts</h2>
-                                
+
+                                <div style={{ marginBottom: '1.5em' }}>
+                                    <strong>April 6, 2026:</strong> &nbsp;
+                                    <a
+                                        href="https://manghumps.substack.com/p/the-path-from-prompting-to-ai-engineering"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        The Path from Prompting to AI Engineering
+                                    </a>
+                                    — My first Substack post! A deep-dive into local AI inference covering the full engineering stack: quantization tradeoffs (FP16 vs Q4_K_M), the GGUF file format, sampling strategy design (temperature, Top-P, Min-P), KV cache memory management, performance metrics (tokens per second), model selection, and a hands-on guide to building and running llama.cpp on Windows.
+                                </div>
+
                                 <div style={{ marginBottom: '1.5em' }}>
                                     <strong>March 8, 2026:</strong> &nbsp;
                                     <a
@@ -115,11 +127,7 @@ const HomePage = ({ isVisible }) => {
                                     — Creating a digital spirograph tool that generates beautiful mathematical patterns with real-time controls and animation.
                                 </div>
                                 <p><em>Blog posts coming soon! I'm currently working on some exciting content to share with you.</em></p>
-                                <p>
-                                        In the meantime, check out my{' '}
-                                        <a href="#projects" style={{ color: '#6B8E23', textDecoration: 'none' }}>Projects</a>
-                                        {' '}to see what I've been building.
-                                </p>
+
                         </section>
 
             <section className="what-to-expect">

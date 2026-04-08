@@ -12,7 +12,6 @@ function initApp() {
         'Header',
         'NavPane',
         'HomePage',
-        'ProjectsPage',
         'AboutPage',
         'Footer',
         'App'
