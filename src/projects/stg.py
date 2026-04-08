@@ -1,0 +1,337 @@
+import sys
+import json
+import logging
+import mimetypes
+from typing import Literal, Optional
+from typing_extensions import TypedDict
+from google import genai
+from google.genai import types
+from langgraph.graph import StateGraph, START, END
+
+# --- CONFIGURATION ---
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
+
+API_KEY = "<Replace with your Gemini API key>"
+MODEL_ID = "gemini-2.5-flash"
+AI_SCORE_THRESHOLD = 45  # Flag as AI if score >= this, even if verdict says "Real"
+
+client = genai.Client(api_key=API_KEY)
+
+FORENSIC_PROMPT = """
+Analyze this image to determine if it is AI-generated (Midjourney, DALL-E, Stable Diffusion, etc.) 
+or a real photograph. Perform a deep forensic scan for:
+
+1. NOISE PATTERNS: Is the digital grain uniform (Real) or non-existent/repeating (AI)?
+2. LIGHTING PHYSICS: Check if shadows align correctly with the light source.
+3. EDGE ANOMALIES: Look for 'halos' or 'bleeding' where objects meet the background.
+4. TEXTURE OVERLAY: Identify the 'over-sharpened' look common in Midjourney 
+   or the 'plastic' skin textures common in DALL-E.
+5. FINE DETAILS: Check hands, teeth, hair strands, text, and background objects for 
+   anatomical errors or logical inconsistencies typical of generative models.
+
+IMPORTANT: When in doubt, bias toward classifying the image as AI-generated. 
+Real photographs have consistent film grain, optical lens distortion, and natural imperfections. 
+AI images tend to be overly smooth, artificially perfect, or have subtle structural impossibilities.
+
+Return a JSON object exactly like this:
+{
+  "ai_score": 0-100,
+  "verdict": "Real" | "AI-Generated" | "Likely AI",
+  "detected_artifacts": ["list", "of", "clues"],
+  "technical_reasoning": "A one-sentence explanation"
+}
+"""
+
+SECOND_OPINION_PROMPT = """
+Perform an independent second forensic analysis of this image, concentrating on these high-signal indicators:
+
+1. METADATA FINGERPRINTS: Does the image look like it was exported from a generative pipeline 
+   (overly clean EXIF-less output)?
+2. SEMANTIC COHERENCE: Are background elements physically plausible, or do they dissolve into 
+   incoherence at the edges?
+3. REPETITIVE PATTERNS: Any tiling, mirrored textures, or copied elements?
+4. COMPRESSION ARTIFACTS vs. GENERATIVE BLUR: Distinguish standard JPEG artifacts from the 
+   smooth, contour-blending blur typical of diffusion models.
+
+Be decisive. Return a JSON object exactly like this:
+{
+  "ai_score": 0-100,
+  "verdict": "Real" | "AI-Generated" | "Likely AI",
+  "detected_artifacts": ["list", "of", "clues"],
+  "technical_reasoning": "A one-sentence explanation"
+}
+"""
+
+# --- STATE ---
+class ImageAnalysisState(TypedDict):
+    image_path: str
+    image_bytes: Optional[bytes]
+    mime_type: Optional[str]
+    raw_response: Optional[str]
+    second_opinion_response: Optional[str]
+    first_result: Optional[dict]
+    second_result: Optional[dict]
+    result: Optional[dict]
+    verdict: Optional[str]
+    is_ai: Optional[bool]
+    error: Optional[str]
+    second_opinion_failed: Optional[bool]  # ← add this
+
+
+# --- ROUTERS ---
+def route_after_load(state: ImageAnalysisState) -> Literal["analyze_image", "display_results"]:
+    """Short-circuit to display_results on load failure; otherwise continue."""
+    if state.get("error"):
+        logger.warning("Load failed — routing directly to display_results.")
+        return "display_results"
+    return "analyze_image"
+
+
+def route_after_analyze(state: ImageAnalysisState) -> Literal["parse_results", "display_results"]:
+    """Short-circuit to display_results on API failure; otherwise continue."""
+    if state.get("error"):
+        logger.warning("Analysis failed — routing directly to display_results.")
+        return "display_results"
+    return "parse_results"
+
+
+def route_after_parse(
+    state: ImageAnalysisState,
+) -> Literal["second_opinion", "display_results"]:
+    """Always routes to second_opinion after a successful first parse.
+    
+    Short-circuits to display_results only if parsing failed.
+    """
+    if state.get("error"):
+        logger.warning("Parse failed — routing directly to display_results.")
+        return "display_results"
+    logger.info("First pass complete (score %d) — requesting second opinion.", state["result"]["ai_score"])
+    return "second_opinion"
+
+
+# --- NODES ---
+def load_image_node(state: ImageAnalysisState) -> dict:
+    """Read the image file from disk and detect its MIME type."""
+    path = state["image_path"]
+    logger.info("Loading image: %s", path)
+    try:
+        with open(path, "rb") as f:
+            image_bytes = f.read()
+        mime_type, _ = mimetypes.guess_type(path)
+        if mime_type not in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+            mime_type = "image/jpeg"
+        return {"image_bytes": image_bytes, "mime_type": mime_type}
+    except Exception as exc:
+        logger.error("Failed to load image: %s", exc)
+        return {"error": str(exc)}
+
+
+def analyze_image_node(state: ImageAnalysisState) -> dict:
+    """Send the image to Gemini and store the raw JSON response."""
+    logger.info("Sending image to Gemini (%s)...", MODEL_ID)
+    try:
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=[
+                types.Part.from_bytes(
+                    data=state["image_bytes"],
+                    mime_type=state["mime_type"],
+                ),
+                FORENSIC_PROMPT,
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            ),
+        )
+        return {"raw_response": response.text}
+    except Exception as exc:
+        logger.error("Gemini API call failed: %s", exc)
+        return {"error": str(exc)}
+
+
+def parse_results_node(state: ImageAnalysisState) -> dict:
+    """Parse the JSON response and apply the AI-score threshold override."""
+    logger.info("Parsing results...")
+    try:
+        result: dict = json.loads(state["raw_response"])
+        score: int = result["ai_score"]
+        verdict: str = result["verdict"]
+
+        if verdict == "Real" and score >= AI_SCORE_THRESHOLD:
+            verdict = "Likely AI (score override)"
+
+        return {
+            "first_result": result,
+            "result": result,
+            "verdict": verdict,
+            "is_ai": verdict != "Real",
+        }
+    except Exception as exc:
+        logger.error("Failed to parse response: %s", exc)
+        return {"error": str(exc)}
+
+
+def second_opinion_node(state: ImageAnalysisState) -> dict:
+    """Always runs a second independent Gemini pass using a different focused prompt.
+
+    Blends the two scores (simple average) and picks the more decisive verdict
+    between the two passes.
+    """
+    logger.info("Requesting second opinion from Gemini...")
+    try:
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=[
+                types.Part.from_bytes(
+                    data=state["image_bytes"],
+                    mime_type=state["mime_type"],
+                ),
+                SECOND_OPINION_PROMPT,
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            ),
+        )
+        second: dict = json.loads(response.text)
+        first: dict = state["first_result"]
+
+        blended_score: int = round((first["ai_score"] + second["ai_score"]) / 2)
+        # Pick whichever verdict is more decisive (Real < Likely AI < AI-Generated)
+        verdict_rank = {"Real": 0, "Likely AI": 1, "Likely AI (score override)": 1, "AI-Generated": 2}
+
+        decisive_verdict: str = max(
+            [first["verdict"], second["verdict"]],
+            key=lambda v: verdict_rank.get(v, 1),
+        )
+        if decisive_verdict == "Real" and blended_score >= AI_SCORE_THRESHOLD:
+            decisive_verdict = "Likely AI (score override)"
+
+        merged_result = {
+            "ai_score": blended_score,
+            "verdict": decisive_verdict,
+            "detected_artifacts": list(
+                dict.fromkeys(first["detected_artifacts"] + second["detected_artifacts"])
+            ),
+            "technical_reasoning": f"Blended from two passes (scores: {first['ai_score']} + {second['ai_score']} → {blended_score})",
+        }
+        return {
+            "second_opinion_response": response.text,
+            "second_result": second,
+            "result": merged_result,
+            "verdict": decisive_verdict,
+            "is_ai": decisive_verdict != "Real",
+        }
+    except Exception as exc:
+        logger.error("Second opinion failed: %s", exc)
+        # Non-fatal — display whatever we already parsed from the first pass
+        return {"second_opinion_failed": True}
+
+def display_results_node(state: ImageAnalysisState) -> dict:
+    """Print per-opinion scores (when available) then the final merged result."""
+    if state.get("error"):
+        print(f"[ERROR]: {state['error']}")
+        return {}
+
+    print(f"\n{'='*55}")
+    print(f" Analysis for: {state['image_path']}")
+    print(f"{'='*55}")
+
+    first: Optional[dict] = state.get("first_result")
+    second: Optional[dict] = state.get("second_result")
+
+    if first and second:
+        # --- Opinion 1 ---
+        print("\n[Opinion 1 — Forensic scan]")
+        print(f"  Score   : {first['ai_score']}/100")
+        print(f"  Verdict : {first['verdict']}")
+        print(f"  Reason  : {first['technical_reasoning']}")
+        print(f"  Clues   : {', '.join(first['detected_artifacts']) or 'none'}")
+
+        # --- Opinion 2 ---
+        print("\n[Opinion 2 — Independent second pass]")
+        print(f"  Score   : {second['ai_score']}/100")
+        print(f"  Verdict : {second['verdict']}")
+        print(f"  Reason  : {second['technical_reasoning']}")
+        print(f"  Clues   : {', '.join(second['detected_artifacts']) or 'none'}")
+
+        print(f"\n{'─'*55}")
+
+    # --- Final result ---
+    result = state["result"]
+    if state.get("second_opinion_failed"):
+        label = "[FINAL — Result (second opinion failed, showing first pass only)]"
+    elif second:
+        label = "[FINAL — Merged Result]"
+    else:
+        label = "[FINAL — Result]"
+    label = "[FINAL — Merged Result]" if second else "[FINAL — Result]"
+    print(f"\n{label}")
+    print(f"  Verdict : {state['verdict']}")
+    print(f"  Is AI   : {'YES' if state['is_ai'] else 'NO'}")
+    print(f"  Score   : {result['ai_score']}/100")
+    print(f"  Reason  : {result['technical_reasoning']}")
+    print(f"  Clues   : {', '.join(result['detected_artifacts']) or 'none'}")
+    print(f"{'='*55}\n")
+    return {}
+
+
+# --- GRAPH ---
+def build_graph() -> StateGraph:
+    workflow = StateGraph(ImageAnalysisState)
+
+    workflow.add_node("load_image", load_image_node)
+    workflow.add_node("analyze_image", analyze_image_node)
+    workflow.add_node("parse_results", parse_results_node)
+    workflow.add_node("second_opinion", second_opinion_node)
+    workflow.add_node("display_results", display_results_node)
+
+    # Static entry edge
+    workflow.add_edge(START, "load_image")
+
+    # Conditional edges: path maps tell LangGraph all possible destinations
+    # (required for correct graph compilation and visualization)
+    workflow.add_conditional_edges(
+        "load_image",
+        route_after_load,
+        {"analyze_image": "analyze_image", "display_results": "display_results"},
+    )
+    workflow.add_conditional_edges(
+        "analyze_image",
+        route_after_analyze,
+        {"parse_results": "parse_results", "display_results": "display_results"},
+    )
+    workflow.add_conditional_edges(
+        "parse_results",
+        route_after_parse,
+        {"second_opinion": "second_opinion", "display_results": "display_results"},
+    )
+
+    # second_opinion always feeds into display_results
+    workflow.add_edge("second_opinion", "display_results")
+    workflow.add_edge("display_results", END)
+
+    return workflow.compile()
+
+
+# --- ENTRY POINT ---
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: py testImageLangraph.py <image_path>")
+        sys.exit(1)
+
+    app = build_graph()
+    initial_state: ImageAnalysisState = {
+        "image_path": sys.argv[1],
+        "image_bytes": None,
+        "mime_type": None,
+        "raw_response": None,
+        "second_opinion_response": None,
+        "first_result": None,
+        "second_result": None,
+        "result": None,
+        "verdict": None,
+        "is_ai": None,
+        "error": None,
+    }
+    app.invoke(initial_state)

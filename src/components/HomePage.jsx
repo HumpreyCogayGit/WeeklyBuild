@@ -9,6 +9,14 @@
 const HomePage = ({ isVisible }) => {
     const posts = [
         {
+            date: 'April 8, 2026',
+            title: 'AI Image Detection v2 — LangGraph + Gemini',
+            url: './src/projects/aiimagedetectionv2.html',
+            summary: 'My first try on creating an Ai Image Detector has a lot of False Positives and False Negatives. With some free tier from Google Ai Studio Im drafting a new POC using A dual-pass forensic image classifier built with Google Gemini 2.5 Flash and a LangGraph state machine. Two independent prompts analyze noise patterns, lighting physics, edge anomalies, and fine detail errors; scores are blended and the most decisive verdict wins — with an override threshold to catch under-confident "Real" classifications.',
+            image: null,
+            type: 'project'
+        },
+        {
             date: 'April 6, 2026',
             title: 'The Path from Prompting to AI Engineering',
             url: 'https://manghumps.substack.com/p/the-path-from-prompting-to-ai-engineering',
