@@ -327,6 +327,14 @@ body {
 }
 /* ======================================================== */
 
+@media (max-width: 768px) {
+    .particle-orb-wrap {
+        bottom: 80px;
+        right: 50%;
+        transform: translateX(50%);
+    }
+}
+
 
 /* Page Content Styles */
 .page-content {
