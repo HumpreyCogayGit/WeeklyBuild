@@ -9,6 +9,7 @@ function initApp() {
     const requiredModules = [
         'useGroundAnimation',
         'useRabbitAnimation',
+        'ParticleOrb',
         'Header',
         'NavPane',
         'HomePage',

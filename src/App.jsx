@@ -57,6 +57,7 @@ const App = () => {
 
     return (
         <>
+            <ParticleOrb />
             <Header onAnimationComplete={handleAnimationComplete} />
             <NavPane 
                 isVisible={contentVisible} 
