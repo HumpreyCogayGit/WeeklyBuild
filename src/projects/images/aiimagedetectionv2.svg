@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect width="160" height="110" fill="#0f1117"/>
+  <!-- Grid background -->
+  <line x1="0" y1="22" x2="160" y2="22" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="0" y1="44" x2="160" y2="44" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="0" y1="66" x2="160" y2="66" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="0" y1="88" x2="160" y2="88" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="32" y1="0" x2="32" y2="110" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="64" y1="0" x2="64" y2="110" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="96" y1="0" x2="96" y2="110" stroke="#1e2333" stroke-width="0.5"/>
+  <line x1="128" y1="0" x2="128" y2="110" stroke="#1e2333" stroke-width="0.5"/>
+  <!-- Pass 1 nodes -->
+  <circle cx="30" cy="35" r="8" fill="none" stroke="#4a9eff" stroke-width="1.5"/>
+  <text x="30" y="39" text-anchor="middle" fill="#4a9eff" font-size="7" font-family="monospace">P1</text>
+  <circle cx="30" cy="75" r="8" fill="none" stroke="#4a9eff" stroke-width="1.5"/>
+  <text x="30" y="79" text-anchor="middle" fill="#4a9eff" font-size="7" font-family="monospace">P2</text>
+  <!-- Arrows to center node -->
+  <line x1="38" y1="38" x2="68" y2="53" stroke="#4a9eff" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="38" y1="72" x2="68" y2="57" stroke="#4a9eff" stroke-width="1" stroke-dasharray="3,2"/>
+  <!-- Center merge node -->
+  <circle cx="80" cy="55" r="12" fill="#1a2440" stroke="#7ec8e3" stroke-width="2"/>
+  <text x="80" y="58" text-anchor="middle" fill="#7ec8e3" font-size="6.5" font-family="monospace" font-weight="bold">BLEND</text>
+  <!-- Arrow to verdict -->
+  <line x1="92" y1="55" x2="118" y2="55" stroke="#7ec8e3" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#7ec8e3"/>
+    </marker>
+  </defs>
+  <!-- Verdict node -->
+  <rect x="120" y="44" width="30" height="22" rx="4" fill="#1a3320" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="135" y="54" text-anchor="middle" fill="#4ade80" font-size="6" font-family="monospace" font-weight="bold">REAL/</text>
+  <text x="135" y="63" text-anchor="middle" fill="#4ade80" font-size="6" font-family="monospace" font-weight="bold">FAKE</text>
+  <!-- Label -->
+  <text x="80" y="102" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">LangGraph + Gemini</text>
+</svg>

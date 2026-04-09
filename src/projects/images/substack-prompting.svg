@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect width="160" height="110" fill="#0d1117"/>
+  <!-- Code lines -->
+  <rect x="12" y="14" width="60" height="5" rx="2" fill="#2d4a6e"/>
+  <rect x="12" y="24" width="90" height="5" rx="2" fill="#1e3a5f"/>
+  <rect x="20" y="34" width="70" height="5" rx="2" fill="#6B8E23" opacity="0.5"/>
+  <rect x="12" y="44" width="55" height="5" rx="2" fill="#2d4a6e"/>
+  <rect x="20" y="54" width="80" height="5" rx="2" fill="#1e3a5f"/>
+  <rect x="20" y="64" width="50" height="5" rx="2" fill="#6B8E23" opacity="0.5"/>
+  <rect x="12" y="74" width="65" height="5" rx="2" fill="#2d4a6e"/>
+  <!-- AI chip graphic on right -->
+  <rect x="108" y="22" width="40" height="40" rx="4" fill="#1a2030" stroke="#4a9eff" stroke-width="1"/>
+  <rect x="116" y="30" width="24" height="24" rx="2" fill="#0d1117" stroke="#4a9eff" stroke-width="0.5"/>
+  <text x="128" y="44" text-anchor="middle" fill="#4a9eff" font-size="8" font-family="monospace" font-weight="bold">AI</text>
+  <!-- Chip pins -->
+  <line x1="108" y1="32" x2="103" y2="32" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="108" y1="38" x2="103" y2="38" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="108" y1="44" x2="103" y2="44" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="108" y1="50" x2="103" y2="50" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="148" y1="32" x2="153" y2="32" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="148" y1="38" x2="153" y2="38" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="148" y1="44" x2="153" y2="44" stroke="#4a9eff" stroke-width="1"/>
+  <line x1="148" y1="50" x2="153" y2="50" stroke="#4a9eff" stroke-width="1"/>
+  <!-- Label -->
+  <text x="80" y="100" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">Prompting → AI Eng</text>
+</svg>

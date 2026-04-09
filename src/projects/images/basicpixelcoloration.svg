@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect width="160" height="110" fill="#0f1117"/>
+  <!-- Pixel grid - colorful squares -->
+  <rect x="10" y="10" width="14" height="14" fill="#ff6b6b"/>
+  <rect x="26" y="10" width="14" height="14" fill="#ff9f7f"/>
+  <rect x="42" y="10" width="14" height="14" fill="#f7dc6f"/>
+  <rect x="58" y="10" width="14" height="14" fill="#4ade80"/>
+  <rect x="74" y="10" width="14" height="14" fill="#4a9eff"/>
+  <rect x="90" y="10" width="14" height="14" fill="#b388ff"/>
+  <rect x="106" y="10" width="14" height="14" fill="#ff6bca"/>
+  <rect x="122" y="10" width="14" height="14" fill="#ff6b6b"/>
+  <rect x="138" y="10" width="14" height="14" fill="#4ade80"/>
+
+  <rect x="10" y="26" width="14" height="14" fill="#4a9eff"/>
+  <rect x="26" y="26" width="14" height="14" fill="#ff6b6b"/>
+  <rect x="42" y="26" width="14" height="14" fill="#4ade80"/>
+  <rect x="58" y="26" width="14" height="14" fill="#ff9f7f"/>
+  <rect x="74" y="26" width="14" height="14" fill="#b388ff"/>
+  <rect x="90" y="26" width="14" height="14" fill="#f7dc6f"/>
+  <rect x="106" y="26" width="14" height="14" fill="#4a9eff"/>
+  <rect x="122" y="26" width="14" height="14" fill="#4ade80"/>
+  <rect x="138" y="26" width="14" height="14" fill="#ff6bca"/>
+
+  <rect x="10" y="42" width="14" height="14" fill="#f7dc6f"/>
+  <rect x="26" y="42" width="14" height="14" fill="#b388ff"/>
+  <rect x="42" y="42" width="14" height="14" fill="#ff6bca"/>
+  <rect x="58" y="42" width="14" height="14" fill="#4a9eff"/>
+  <rect x="74" y="42" width="14" height="14" fill="#ff6b6b"/>
+  <rect x="90" y="42" width="14" height="14" fill="#4ade80"/>
+  <rect x="106" y="42" width="14" height="14" fill="#ff9f7f"/>
+  <rect x="122" y="42" width="14" height="14" fill="#f7dc6f"/>
+  <rect x="138" y="42" width="14" height="14" fill="#4a9eff"/>
+
+  <rect x="10" y="58" width="14" height="14" fill="#4ade80"/>
+  <rect x="26" y="58" width="14" height="14" fill="#ff6bca"/>
+  <rect x="42" y="58" width="14" height="14" fill="#4a9eff"/>
+  <rect x="58" y="58" width="14" height="14" fill="#ff6b6b"/>
+  <rect x="74" y="58" width="14" height="14" fill="#f7dc6f"/>
+  <rect x="90" y="58" width="14" height="14" fill="#b388ff"/>
+  <rect x="106" y="58" width="14" height="14" fill="#4ade80"/>
+  <rect x="122" y="58" width="14" height="14" fill="#ff9f7f"/>
+  <rect x="138" y="58" width="14" height="14" fill="#ff6b6b"/>
+
+  <!-- Invert overlay strip at bottom to show transformation -->
+  <rect x="10" y="74" width="14" height="14" fill="#009494"/>
+  <rect x="26" y="74" width="14" height="14" fill="#006080"/>
+  <rect x="42" y="74" width="14" height="14" fill="#082380"/>
+  <rect x="58" y="74" width="14" height="14" fill="#bb219f"/>
+  <rect x="74" y="74" width="14" height="14" fill="#bb6600"/>
+  <rect x="90" y="74" width="14" height="14" fill="#4c7700"/>
+  <rect x="106" y="74" width="14" height="14" fill="#bb2135"/>
+  <rect x="122" y="74" width="14" height="14" fill="#009494"/>
+  <rect x="138" y="74" width="14" height="14" fill="#bb219f"/>
+
+  <!-- Label -->
+  <text x="80" y="106" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">Pixel Coloration</text>
+</svg>

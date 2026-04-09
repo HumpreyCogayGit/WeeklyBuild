@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect width="160" height="110" fill="#0f1117"/>
+  <!-- Face outline -->
+  <ellipse cx="80" cy="52" rx="30" ry="36" fill="none" stroke="#666" stroke-width="1"/>
+  <!-- Eyes -->
+  <ellipse cx="68" cy="44" rx="5" ry="4" fill="none" stroke="#aaa" stroke-width="1"/>
+  <ellipse cx="92" cy="44" rx="5" ry="4" fill="none" stroke="#aaa" stroke-width="1"/>
+  <circle cx="68" cy="44" r="2" fill="#aaa"/>
+  <circle cx="92" cy="44" r="2" fill="#aaa"/>
+  <!-- Nose -->
+  <path d="M80 48 L76 60 L84 60" fill="none" stroke="#666" stroke-width="1"/>
+  <!-- Mouth -->
+  <path d="M70 68 Q80 74 90 68" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <!-- Detection bounding box -->
+  <rect x="42" y="10" width="76" height="85" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- Corner markers -->
+  <path d="M42 20 L42 10 L52 10" fill="none" stroke="#4ade80" stroke-width="2"/>
+  <path d="M108 20 L108 10 L98 10" fill="none" stroke="#4ade80" stroke-width="2"/>
+  <path d="M42 85 L42 95 L52 95" fill="none" stroke="#4ade80" stroke-width="2"/>
+  <path d="M108 85 L108 95 L98 95" fill="none" stroke="#4ade80" stroke-width="2"/>
+  <!-- Confidence score -->
+  <text x="44" y="9" fill="#4ade80" font-size="7" font-family="monospace">98.4%</text>
+</svg>
