@@ -2,18 +2,21 @@
  * HomePage Component
  * Main landing page with welcome message
  * @param {boolean} isVisible - Controls the visibility/opacity of the page
- *
- * To add a cover image to any entry, set the `image` field to the full image URL.
- * For Substack posts: copy the cover image URL from your Substack post and paste it here.
  */
 const HomePage = ({ isVisible }) => {
     const posts = [
+        {
+            date: 'April 14, 2026',
+            title: 'RAG (Retrieval-Augmented Generation)',
+            url: 'https://manghumps.substack.com/p/rag-retrieval-augmented-generation',
+            summary: 'An overview of how Retrieval-Augmented Generation (RAG) bridges the gap between static AI models and real-time data to provide more accurate, verifiable, and context-aware responses.',
+            type: 'substack'
+        },
         {
             date: 'April 8, 2026',
             title: 'AI Image Detection v2 — LangGraph + Gemini',
             url: './src/projects/aiimagedetectionv2.html',
             summary: 'My first try on creating an Ai Image Detector has a lot of False Positives and False Negatives. With some free tier from Google Ai Studio Im drafting a new POC using A dual-pass forensic image classifier built with Google Gemini 2.5 Flash and a LangGraph state machine. Two independent prompts analyze noise patterns, lighting physics, edge anomalies, and fine detail errors; scores are blended and the most decisive verdict wins — with an override threshold to catch under-confident "Real" classifications.',
-            image: null,
             type: 'project'
         },
         {
@@ -21,7 +24,6 @@ const HomePage = ({ isVisible }) => {
             title: 'The Path from Prompting to AI Engineering',
             url: 'https://manghumps.substack.com/p/the-path-from-prompting-to-ai-engineering',
             summary: 'My first Substack post! A deep-dive into local AI inference covering the full engineering stack: quantization tradeoffs (FP16 vs Q4_K_M), the GGUF file format, sampling strategy design (temperature, Top-P, Min-P), KV cache memory management, performance metrics (tokens per second), model selection, and a hands-on guide to building and running llama.cpp on Windows.',
-            image: null,
             type: 'substack'
         },
         {
@@ -29,7 +31,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Face Detection',
             url: './src/projects/facedetection.html',
             summary: 'A Python-based real-time face detection tool leveraging TensorFlow and OpenCV, capable of identifying and tracking multiple faces in images and video streams.',
-            image: null,
             type: 'project'
         },
         {
@@ -37,7 +38,6 @@ const HomePage = ({ isVisible }) => {
             title: 'AI Image Detection',
             url: './src/projects/aiimagedetection.html',
             summary: 'A detailed Python tool for detecting AI-generated images using Benford\'s Law, DCT analysis, color entropy, and block variance heuristics.',
-            image: null,
             type: 'project'
         },
         {
@@ -45,7 +45,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Image Effects Studio',
             url: './src/projects/imageEffects.html',
             summary: 'Image filtering tool featuring 18+ effects including edge detection (Sobel, Prewitt, Laplacian), artistic filters (Oil Paint, Cartoon), blur effects (Gaussian, Motion Blur), and creative transformations (Halftone, Glitch, Posterize) with real-time parameter adjustment.',
-            image: null,
             type: 'project'
         },
         {
@@ -53,7 +52,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Sobel Filter Side-by-Side',
             url: './src/projects/sobelfilter.html',
             summary: 'Interactive Sobel edge detection demo showing original and filtered canvases side-by-side with adjustable vertical and horizontal strengths.',
-            image: null,
             type: 'project'
         },
         {
@@ -61,7 +59,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Basic Image Adjustments',
             url: './src/projects/basicimageadjustments.html',
             summary: 'Experiment with image pixel adjustments using basic algorithms for brightness, contrast, saturation, grayscale, sepia effects.',
-            image: null,
             type: 'project'
         },
         {
@@ -69,7 +66,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Basic Pixel Coloration',
             url: './src/projects/basicpixelcoloration.html',
             summary: 'A simple interactive demo that lets you upload any image and instantly apply color effects (invert, grayscale, sepia, high contrast, and more) using HTML5 Canvas. Try it with your own photos!',
-            image: null,
             type: 'project'
         },
         {
@@ -77,7 +73,6 @@ const HomePage = ({ isVisible }) => {
             title: 'PixCulate',
             url: './src/projects/pixcular.html',
             summary: 'A playful Canvas experiment that turns portraits into animated pixel mosaics in just a few seconds.',
-            image: null,
             type: 'project'
         },
         {
@@ -85,7 +80,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Unsharp Mask Image Sharpening',
             url: './src/projects/unsharpmask.html',
             summary: 'Implementing Gaussian blur and unsharp masking techniques to sharpen images interactively using HTML5 Canvas.',
-            image: null,
             type: 'project'
         },
         {
@@ -93,7 +87,6 @@ const HomePage = ({ isVisible }) => {
             title: 'Spirograph Generator',
             url: './src/projects/spirograph.html',
             summary: 'Creating a digital spirograph tool that generates beautiful mathematical patterns with real-time controls and animation.',
-            image: null,
             type: 'project'
         }
     ];
