@@ -84,28 +84,6 @@ const AboutPage = ({ isVisible }) => {
             </div>
 
             <div className="about-section">
-                <h2>Technologies I Work With</h2>
-                <div className="tech-stack">
-                    <div className="tech-category">
-                        <h3>Data & Analytics</h3>
-                        <p>Azure Data Factory, Databricks, Python, SQL, Apache Spark</p>
-                    </div>
-                    <div className="tech-category">
-                        <h3>Cloud Platforms</h3>
-                        <p>AWS, Azure</p>
-                    </div>
-                    <div className="tech-category">
-                        <h3>AI & ML</h3>
-                        <p>Hugging Face, OpenAI, Langchain, Stable Diffusion</p>
-                    </div>
-                    <div className="tech-category">
-                        <h3>Development</h3>
-                        <p>Python, React, Docker, Git, C#, .NET</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="about-section">
                 <h2>Let's Connect</h2>
                 <p>
                     I'm always excited to connect with fellow tech enthusiasts, data engineers, and lifelong learners. 

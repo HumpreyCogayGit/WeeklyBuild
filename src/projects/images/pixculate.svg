@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect width="160" height="110" fill="#0f1117"/>
+  <!-- Mosaic grid representing a face portrait -->
+  <!-- Row 1 - top (hair) -->
+  <rect x="44" y="8" width="10" height="10" fill="#2a1a0a"/>
+  <rect x="56" y="8" width="10" height="10" fill="#3a2515"/>
+  <rect x="68" y="8" width="10" height="10" fill="#3a2515"/>
+  <rect x="80" y="8" width="10" height="10" fill="#2a1a0a"/>
+  <rect x="92" y="8" width="10" height="10" fill="#3a2515"/>
+  <rect x="104" y="8" width="10" height="10" fill="#2a1a0a"/>
+  <!-- Row 2 - forehead -->
+  <rect x="44" y="20" width="10" height="10" fill="#3a2515"/>
+  <rect x="56" y="20" width="10" height="10" fill="#c8956c"/>
+  <rect x="68" y="20" width="10" height="10" fill="#d4a574"/>
+  <rect x="80" y="20" width="10" height="10" fill="#d4a574"/>
+  <rect x="92" y="20" width="10" height="10" fill="#c8956c"/>
+  <rect x="104" y="20" width="10" height="10" fill="#2a1a0a"/>
+  <!-- Row 3 - eyes -->
+  <rect x="44" y="32" width="10" height="10" fill="#c8956c"/>
+  <rect x="56" y="32" width="10" height="10" fill="#4a3020"/>
+  <rect x="68" y="32" width="10" height="10" fill="#fff8f0"/>
+  <rect x="80" y="32" width="10" height="10" fill="#fff8f0"/>
+  <rect x="92" y="32" width="10" height="10" fill="#4a3020"/>
+  <rect x="104" y="32" width="10" height="10" fill="#b08060"/>
+  <!-- Row 4 - nose -->
+  <rect x="56" y="44" width="10" height="10" fill="#b88060"/>
+  <rect x="68" y="44" width="10" height="10" fill="#d4a574"/>
+  <rect x="80" y="44" width="10" height="10" fill="#d4a574"/>
+  <rect x="92" y="44" width="10" height="10" fill="#b88060"/>
+  <!-- Row 5 - mouth -->
+  <rect x="56" y="56" width="10" height="10" fill="#c8956c"/>
+  <rect x="68" y="56" width="10" height="10" fill="#e06060"/>
+  <rect x="80" y="56" width="10" height="10" fill="#e06060"/>
+  <rect x="92" y="56" width="10" height="10" fill="#c8956c"/>
+  <!-- Row 6 - chin -->
+  <rect x="56" y="68" width="10" height="10" fill="#c8956c"/>
+  <rect x="68" y="68" width="10" height="10" fill="#d4a574"/>
+  <rect x="80" y="68" width="10" height="10" fill="#d4a574"/>
+  <rect x="92" y="68" width="10" height="10" fill="#c8956c"/>
+  <!-- Label -->
+  <text x="80" y="100" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">PixCulate Mosaic</text>
+</svg>

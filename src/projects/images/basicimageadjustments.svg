@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 110" width="160" height="110">
+  <rect width="160" height="110" fill="#0f1117"/>
+  <!-- Brightness slider -->
+  <text x="14" y="25" fill="#aaa" font-size="8" font-family="monospace">Brightness</text>
+  <rect x="14" y="30" width="132" height="5" rx="2.5" fill="#2a2a2a"/>
+  <rect x="14" y="30" width="90" height="5" rx="2.5" fill="#f7dc6f" opacity="0.7"/>
+  <circle cx="104" cy="32.5" r="5" fill="#f7dc6f" stroke="#0f1117" stroke-width="1"/>
+  <!-- Contrast slider -->
+  <text x="14" y="52" fill="#aaa" font-size="8" font-family="monospace">Contrast</text>
+  <rect x="14" y="57" width="132" height="5" rx="2.5" fill="#2a2a2a"/>
+  <rect x="14" y="57" width="65" height="5" rx="2.5" fill="#ff9f7f" opacity="0.7"/>
+  <circle cx="79" cy="59.5" r="5" fill="#ff9f7f" stroke="#0f1117" stroke-width="1"/>
+  <!-- Saturation slider -->
+  <text x="14" y="79" fill="#aaa" font-size="8" font-family="monospace">Saturation</text>
+  <rect x="14" y="84" width="132" height="5" rx="2.5" fill="#2a2a2a"/>
+  <rect x="14" y="84" width="110" height="5" rx="2.5" fill="#7ec8e3" opacity="0.7"/>
+  <circle cx="124" cy="86.5" r="5" fill="#7ec8e3" stroke="#0f1117" stroke-width="1"/>
+  <!-- Label -->
+  <text x="80" y="107" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">Image Adjustments</text>
+</svg>
