@@ -12,6 +12,37 @@ const PROJECTS_DATA = {
             icon: '',
             projects: [
                 {
+                    id: 'json-to-html-generator',
+                    slug: 'json-to-html-generator',
+                    title: 'JSON to HTML Generator',
+                    subtitle: 'Ollama-Powered HTML Generation (Python)',
+                    description: 'A Python CLI utility that converts raw JSON data into a polished single-file HTML document using a local Ollama language model, while reporting timing and estimated token metrics.',
+                    status: 'completed',
+                    date: '2026-06-14',
+                    technologies: ['Python', 'JSON', 'Ollama', 'Requests', 'LLM Prompting', 'HTML'],
+                    overview: 'Loads JSON from disk, builds a structured prompt for a local Ollama model, generates semantic HTML, estimates input/output token counts, and saves the result beside the source JSON file.',
+                    problem: 'Raw JSON is difficult to share with non-technical readers and often needs manual transformation before it becomes readable web content.',
+                    solution: 'Automates JSON-to-HTML conversion by combining Python file handling, prompt engineering, Ollama API calls, and output metrics in a simple command-line workflow.',
+                    challenges: [
+                        'Prompting the model to return only complete HTML without markdown fences or explanations',
+                        'Handling JSON loading and decode failures with clear CLI errors',
+                        'Estimating token throughput without requiring tokenizer-specific dependencies'
+                    ],
+                    learnings: [
+                        'Calling a local Ollama generation endpoint from Python',
+                        'Designing focused prompts for structured HTML generation',
+                        'Capturing elapsed time and approximate token metrics for LLM workflows'
+                    ],
+                    futureImprovements: [
+                        'Add argparse options for model name, Ollama endpoint, and output path',
+                        'Stream model responses for progress feedback on large JSON files',
+                        'Add validation or cleanup for generated HTML before saving'
+                    ],
+                    github: 'https://github.com/HumpreyCogayGit/ai-json-html',
+                    demo: './src/projects/jsonToHtml.html',
+                    featured: true
+                },
+                {
                     id: 'facedetection',
                     slug: 'facedetection',
                     title: 'Face Detection',

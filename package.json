@@ -4,8 +4,8 @@
   "description": "A React.js application featuring an animated ASCII rabbit with enterprise-level architecture",
   "main": "src/main.jsx",
   "scripts": {
-    "start": "npx http-server public -p 8000 -o",
-    "serve": "python -m http.server 8000 --directory public"
+    "start": "npx http-server . -p 8000 -o",
+    "serve": "python -m http.server 8000 --directory ."
   },
   "keywords": [
     "react",

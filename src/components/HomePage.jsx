@@ -6,6 +6,15 @@
 const HomePage = ({ isVisible }) => {
     const posts = [
         {
+            date: 'June 14, 2026',
+            title: 'Weekend AI Project: JSON to HTML Generator',
+            url: './src/projects/jsonToHtml.html',
+            summary: 'A simple POC demonstrating how free, local AI can efficiently handle data transformation tasks dynamically, specifically converting complex JSON payloads into clean, readable HTML. While this initial scope focuses on zero-cost local inference for structured data formatting, the long-term architectural goal is to evolve this into a multi-agent system where workload orchestration is dynamically scaled — using frontier models for planning and orchestration, then sending small tasks to free or cheap models. Inference Engine: Ollama running Gemma 4 locally.',
+            github: 'https://github.com/HumpreyCogayGit/ai-json-html',
+            image: null,
+            type: 'project'
+        },
+        {
             date: 'April 14, 2026',
             title: 'RAG (Retrieval-Augmented Generation)',
             url: 'https://manghumps.substack.com/p/rag-retrieval-augmented-generation',
@@ -124,6 +133,14 @@ const HomePage = ({ isVisible }) => {
                             </div>
                             <a className="post-row-title" href={post.url} target="_blank" rel="noopener noreferrer">{post.title}</a>
                             <p className="post-row-summary">{post.summary}</p>
+                            {post.github && (
+                                <p className="post-row-summary">
+                                    Full Code Available at{' '}
+                                    <a href={post.github} target="_blank" rel="noopener noreferrer">
+                                        {post.github}
+                                    </a>
+                                </p>
+                            )}
                         </div>
                     </div>
                 ))}
