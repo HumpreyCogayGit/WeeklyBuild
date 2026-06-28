@@ -6,6 +6,14 @@
 const HomePage = ({ isVisible }) => {
     const posts = [
         {
+            date: 'June 28, 2026',
+            title: 'Virtual Piano - MediaPipe + Web Audio API',
+            url: './src/projects/piano.html',
+            summary: 'A webcam-driven, hands-free piano powered by Google\'s MediaPipe hand landmarker.',
+            image: null,
+            type: 'project'
+        },
+        {
             date: 'June 14, 2026',
             title: 'Weekend AI Project: JSON to HTML Generator',
             url: './src/projects/jsonToHtml.html',

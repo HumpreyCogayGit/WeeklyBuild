@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Virtual Piano — Source (Python)</title>
+  <style>
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#fff;color:#111;padding:24px;line-height:1.55}
+    .container{max-width:1100px;margin:0 auto}
+    h1{color:#2c6e49;margin-bottom:6px}
+    h2{color:#2c6e49;margin-top:28px;margin-bottom:8px;font-size:1.25em;border-bottom:1px solid #e5e7eb;padding-bottom:6px}
+    h3{color:#374151;margin-top:18px;margin-bottom:6px;font-size:1.05em}
+    p{margin:8px 0;color:#1f2937}
+    ul{margin:6px 0 10px 22px;color:#1f2937}
+    li{margin:4px 0}
+    a{color:#2c6e49;text-decoration:none;border-bottom:1px dotted #2c6e49}
+    a:hover{text-decoration:underline}
+    .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;margin-top:14px}
+    button{background:#2c6e49;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    button.secondary{background:#f3f4f6;color:#111}
+    .code{background:#0b1021;color:#e6eef8;padding:18px;border-radius:8px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,'Roboto Mono',monospace;font-size:13px;line-height:1.45}
+    .meta{color:#6b7280}
+    .note{margin-top:12px;color:#374151}
+    pre{white-space:pre-wrap}
+    code.inline{background:#f3f4f6;color:#111;padding:1px 6px;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,'Roboto Mono',monospace;font-size:0.92em}
+    .callout{background:#f0fdf4;border-left:3px solid #2c6e49;padding:12px 14px;border-radius:4px;margin:12px 0}
+    .callout strong{color:#14532d}
+    .req-block{background:#fafafa;border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin:10px 0}
+    .req-block pre{background:#0b1021;color:#e6eef8;padding:12px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,'Roboto Mono',monospace;font-size:12.5px;margin:6px 0;white-space:pre}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Virtual Piano — Source (Python)</h1>
+    <p class="meta">A webcam-driven, hands-free piano powered by Google's MediaPipe hand landmarker.</p>
+
+    <h2>What This Project Does</h2>
+    <p>
+      <strong>piano.py</strong> turns your webcam into a virtual piano. The script captures live
+      video, runs Google's <strong>MediaPipe Hand Landmarker</strong> on each frame to track the
+      21 landmarks of each hand, and overlays a 10-key piano (with sharps) at the bottom of the
+      view. Lowering any of your fingertips below an on-screen blue press line plays the
+      nearest key — black keys (sharps) take priority when a fingertip is directly over them.
+    </p>
+    <ul>
+      <li>Real-time hand tracking with up to two hands, five fingertips each.</li>
+      <li>Polyphonic audio engine with additive harmonics + ADSR envelope, mixed live through
+        <code class="inline">sounddevice</code>.</li>
+      <li>On-screen HUD with adjustable press sensitivity (<code class="inline">+</code> / <code class="inline">-</code>) and quit (<code class="inline">Q</code>).</li>
+      <li>Mirrored "selfie" view so the on-screen hand matches your real hand.</li>
+    </ul>
+
+    <h2>Powered by Google MediaPipe</h2>
+    <p>
+      The fingertip tracking is built on
+      <a href="https://ai.google.dev/edge/mediapipe" target="_blank" rel="noopener">Google MediaPipe</a>,
+      an open-source, cross-platform framework for on-device perceptual ML. Specifically, this
+      project uses the
+      <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker" target="_blank" rel="noopener">
+      Hand Landmarker task</a>, which detects hands in an image and returns 21 3D landmarks per
+      hand (palm, knuckles, and fingertips) along with handedness (left/right).
+    </p>
+    <p>The script loads MediaPipe's pre-trained <code class="inline">hand_landmarker.task</code> bundle
+      and runs it in <code class="inline">VIDEO</code> mode for low-latency, frame-by-frame inference.
+      Tips 4, 8, 12, 16, and 20 correspond to the thumb through pinky fingertips and drive the
+      press-detection logic.</p>
+    <div class="callout">
+      <strong>Reference docs:</strong><br/>
+      &bull; MediaPipe overview &mdash; <a href="https://ai.google.dev/edge/mediapipe" target="_blank" rel="noopener">https://ai.google.dev/edge/mediapipe</a><br/>
+      &bull; Hand Landmarker guide &mdash; <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker" target="_blank" rel="noopener">https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker</a><br/>
+      &bull; Python API &mdash; <a href="https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/python" target="_blank" rel="noopener">https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/python</a><br/>
+      &bull; Source repository &mdash; <a href="https://github.com/google-ai-edge/mediapipe" target="_blank" rel="noopener">https://github.com/google-ai-edge/mediapipe</a>
+    </div>
+
+    <h2>Requirements</h2>
+    <ul>
+      <li>Python 3.10 or newer (MediaPipe Tasks require a reasonably recent CPython build).</li>
+      <li>A working webcam accessible to OpenCV (<code class="inline">cv2.VideoCapture(0)</code>).</li>
+      <li>Audio output device (the script opens a <code class="inline">sounddevice</code> output stream).</li>
+      <li>The MediaPipe Hand Landmarker model file <code class="inline">hand_landmarker.task</code>
+        placed next to <code class="inline">piano.py</code>.</li>
+    </ul>
+
+    <h3>Python packages</h3>
+    <ul>
+      <li><code class="inline">mediapipe</code> &mdash; Google's MediaPipe Tasks Python API.</li>
+      <li><code class="inline">opencv-python</code> &mdash; Camera capture and on-screen rendering.</li>
+      <li><code class="inline">numpy</code> &mdash; Wave synthesis and array math.</li>
+      <li><code class="inline">sounddevice</code> &mdash; Low-latency PortAudio output.</li>
+    </ul>
+
+    <h2>Installation</h2>
+    <div class="req-block">
+      <p style="margin-top:0"><strong>1.</strong> (Recommended) Create and activate a virtual environment:</p>
+<pre>python3 -m venv .venv
+source .venv/bin/activate      # macOS / Linux
+# .venv\Scripts\activate       # Windows</pre>
+
+      <p><strong>2.</strong> Install the Python dependencies:</p>
+<pre>pip install mediapipe opencv-python numpy sounddevice</pre>
+
+      <p><strong>3.</strong> Download the MediaPipe Hand Landmarker model into the same folder
+        as <code class="inline">piano.py</code>:</p>
+<pre>curl -sSL -o hand_landmarker.task \
+  https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task</pre>
+
+      <p><strong>4.</strong> On macOS, you may also need PortAudio for <code class="inline">sounddevice</code>:</p>
+<pre>brew install portaudio</pre>
+
+      <p style="margin-bottom:0"><strong>5.</strong> Run the script:</p>
+<pre>python piano.py</pre>
+    </div>
+
+    <h3>Controls</h3>
+    <ul>
+      <li><code class="inline">Q</code> &mdash; quit the application.</li>
+      <li><code class="inline">+</code> / <code class="inline">=</code> &mdash; raise the press line (easier to trigger notes).</li>
+      <li><code class="inline">-</code> &mdash; lower the press line (require a deeper press).</li>
+    </ul>
+
+    <h2>Source Code</h2>
+    <div class="toolbar">
+      <button id="copyBtn">Copy Code</button>
+      <button id="downloadBtn" class="secondary">Download .py</button>
+      <span class="meta">File: <strong>piano.py</strong></span>
+    </div>
+
+    <div class="code" id="codeBlock" tabindex="0">
+<pre><code class="language-python" id="visibleCode">#!/usr/bin/env python3
+"""
+Virtual Piano — MediaPipe Hand Tracking
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Aim a fingertip directly over a black key region to play the sharp;
+otherwise the nearest white key plays. Lower the finger past the blue
+press line to trigger the note.
+
+Controls:
+  Q  — quit
+  +  — raise press line (easier to trigger)
+  -  — lower press line (require deeper press)
+"""
+
+import os
+import threading
+import time
+import cv2
+import mediapipe as mp
+import numpy as np
+import sounddevice as sd
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision as mp_vision
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "hand_landmarker.task")
+
+HAND_CONNECTIONS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),
+    (0, 5), (5, 6), (6, 7), (7, 8),
+    (5, 9), (9, 10), (10, 11), (11, 12),
+    (9, 13), (13, 14), (14, 15), (15, 16),
+    (13, 17), (17, 18), (18, 19), (19, 20),
+    (0, 17),
+]
+
+# ─── Audio configuration ──────────────────────────────────────────────────────
+SAMPLE_RATE       = 44100
+AUDIO_BLOCKSIZE   = 1024       # larger buffer → fewer underruns on a busy CPU
+MASTER_GAIN       = 0.55       # per-voice base gain (divided by sqrt(N voices))
+RETRIGGER_DEBOUNCE = 0.05      # seconds — ignore retriggers of the same note
+MAX_VOICES        = 24         # hard cap on simultaneous voices
+
+WHITE_KEYS = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5"]
+
+# (white-key boundary index 1..9, sharp note). No black key between E-F or B-C.
+BLACK_KEYS = [
+    (1, "C#4"), (2, "D#4"),
+    (4, "F#4"), (5, "G#4"), (6, "A#4"),
+    (8, "C#5"), (9, "D#5"),
+]
+
+NOTE_FREQS = {
+    "C4": 261.63, "C#4": 277.18, "D4": 293.66, "D#4": 311.13, "E4": 329.63,
+    "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00,
+    "A#4": 466.16, "B4": 493.88, "C5": 523.25, "C#5": 554.37, "D5": 587.33,
+    "D#5": 622.25, "E5": 659.25,
+}
+
+# ─── Visual configuration ────────────────────────────────────────────────────
+FINGERTIP_IDS = [4, 8, 12, 16, 20]   # thumb → pinky
+
+PRESS_ZONE_INIT = 0.68
+PRESS_ZONE_MIN  = 0.40
+PRESS_ZONE_MAX  = 0.85
+PRESS_ZONE_STEP = 0.02
+
+PIANO_ZONE_Y     = 0.78
+BLACK_KEY_HEIGHT = 0.62
+BLACK_KEY_WIDTH  = 0.60
+
+KEY_WHITE         = (245, 245, 245)
+KEY_WHITE_PRESSED = (50,  185, 255)
+KEY_BLACK         = (25,  25,  25)
+KEY_BLACK_PRESSED = (255, 150, 30)
+KEY_OUTLINE       = (40,  40,  40)
+KEY_TEXT_DARK     = (20,  20,  20)
+KEY_TEXT_LIGHT    = (235, 235, 235)
+
+# Blue palette for skeleton + interaction overlays (BGR)
+PRESS_LINE_COLOR  = (255, 150, 40)    # bright blue press line
+SKELETON_BONE     = (255, 200, 120)   # light blue bones
+SKELETON_JOINT    = (255, 150, 40)    # vivid blue joints
+TIP_UP_COLOR      = (255, 150, 40)    # blue when finger is above the line
+TIP_DOWN_COLOR    = (60,  130, 255)   # orange-red when finger is pressing
+
+
+# ─── Audio engine ─────────────────────────────────────────────────────────────
+def _build_wave(freq: float, duration: float = 1.2) -&gt; np.ndarray:
+    """Piano-like tone: additive harmonics + ADSR + per-note peak normalization."""
+    t = np.linspace(0, duration, int(SAMPLE_RATE * duration), endpoint=False)
+
+    wave = (
+        1.00 * np.sin(2 * np.pi * 1 * freq * t) +
+        0.28 * np.sin(2 * np.pi * 2 * freq * t) +
+        0.10 * np.sin(2 * np.pi * 3 * freq * t) +
+        0.04 * np.sin(2 * np.pi * 4 * freq * t)
+    )
+
+    n       = len(t)
+    attack  = int(0.006 * SAMPLE_RATE)
+    decay   = int(0.18  * SAMPLE_RATE)
+    release = int(0.45  * SAMPLE_RATE)
+    sustain = 0.30
+
+    env = np.full(n, sustain, dtype=np.float32)
+    env[:attack]                = np.linspace(0.0, 1.0, attack)
+    env[attack:attack + decay]  = np.linspace(1.0, sustain, decay)
+    env[-release:]             *= np.linspace(1.0, 0.0, release)
+
+    wave = (wave * env).astype(np.float32)
+    peak = float(np.max(np.abs(wave)))
+    if peak &gt; 0:
+        wave /= peak
+    return wave
+
+
+class PianoMixer:
+    """Voice-based polyphonic mixer.
+    Each call to play() spawns an independent voice that decays naturally,
+    so re-triggering the same note never creates a discontinuity click.
+    Output gain auto-scales as ~1/sqrt(active_voices) so loudness stays
+    roughly constant regardless of polyphony — no hard limiter needed.
+    """
+
+    def __init__(self):
+        self._waves = {note: _build_wave(freq) for note, freq in NOTE_FREQS.items()}
+        # active voices: list of [note_name, sample_position]
+        self._voices: list[list] = []
+        self._last_trigger: dict[str, float] = {}
+        self._lock = threading.Lock()
+        self._stream = sd.OutputStream(
+            samplerate=SAMPLE_RATE,
+            channels=1,
+            dtype="float32",
+            blocksize=AUDIO_BLOCKSIZE,
+            latency="high",
+            callback=self._callback,
+        )
+        self._stream.start()
+
+    def _callback(self, outdata, frames, time_info, status):  # noqa: ARG002
+        mixed = np.zeros(frames, dtype=np.float32)
+        with self._lock:
+            survivors = []
+            for voice in self._voices:
+                note, pos = voice
+                wave = self._waves[note]
+                end  = min(pos + frames, len(wave))
+                chunk = wave[pos:end]
+                mixed[:len(chunk)] += chunk
+                if end &lt; len(wave):
+                    voice[1] = end
+                    survivors.append(voice)
+            self._voices = survivors
+            active = max(1, len(survivors))
+
+        # Auto gain: keeps loudness roughly constant as polyphony grows
+        gain = MASTER_GAIN / np.sqrt(active)
+        np.multiply(mixed, gain, out=mixed)
+
+        # Final safety clamp (should rarely engage with auto-gain in place)
+        np.clip(mixed, -0.98, 0.98, out=mixed)
+        outdata[:, 0] = mixed
+
+    def play(self, note: str) -&gt; None:
+        now = time.monotonic()
+        with self._lock:
+            # Debounce: skip if the same note was just triggered (finger jitter)
+            last = self._last_trigger.get(note, 0.0)
+            if now - last &lt; RETRIGGER_DEBOUNCE:
+                return
+            self._last_trigger[note] = now
+
+            self._voices.append([note, 0])
+            # Drop oldest voices if we exceed the cap
+            if len(self._voices) &gt; MAX_VOICES:
+                self._voices = self._voices[-MAX_VOICES:]
+
+    def close(self) -&gt; None:
+        self._stream.stop()
+        self._stream.close()
+
+
+# ─── Drawing helpers ──────────────────────────────────────────────────────────
+def draw_piano(frame: np.ndarray, h: int, w: int, pressed: set) -&gt; None:
+    """Draw white + black piano keys at the bottom of the frame."""
+    top       = int(PIANO_ZONE_Y * h)
+    bottom    = h - 2
+    white_w   = w / len(WHITE_KEYS)
+    black_w   = white_w * BLACK_KEY_WIDTH
+    black_bot = top + int((bottom - top) * BLACK_KEY_HEIGHT)
+
+    # White keys first; black keys overlap on top
+    for i, note in enumerate(WHITE_KEYS):
+        x1 = int(i * white_w)
+        x2 = int((i + 1) * white_w) - 2
+        color = KEY_WHITE_PRESSED if note in pressed else KEY_WHITE
+
+        cv2.rectangle(frame, (x1, top), (x2, bottom), color, -1)
+        cv2.rectangle(frame, (x1, top), (x2, bottom), KEY_OUTLINE, 1)
+
+        fs = 0.42
+        (tw, _), _ = cv2.getTextSize(note, cv2.FONT_HERSHEY_SIMPLEX, fs, 1)
+        cv2.putText(frame, note,
+                    (x1 + (int(white_w) - tw) // 2, bottom - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, fs, KEY_TEXT_DARK, 1, cv2.LINE_AA)
+
+    for boundary_idx, note in BLACK_KEYS:
+        cx = boundary_idx * white_w
+        x1 = int(cx - black_w / 2)
+        x2 = int(cx + black_w / 2)
+        color = KEY_BLACK_PRESSED if note in pressed else KEY_BLACK
+
+        cv2.rectangle(frame, (x1, top), (x2, black_bot), color, -1)
+        cv2.rectangle(frame, (x1, top), (x2, black_bot), KEY_OUTLINE, 1)
+
+        fs = 0.34
+        (tw, _), _ = cv2.getTextSize(note, cv2.FONT_HERSHEY_SIMPLEX, fs, 1)
+        cv2.putText(frame, note,
+                    (x1 + (int(black_w) - tw) // 2, black_bot - 6),
+                    cv2.FONT_HERSHEY_SIMPLEX, fs, KEY_TEXT_LIGHT, 1, cv2.LINE_AA)
+
+
+def draw_press_line(frame: np.ndarray, h: int, w: int, zone_y: float) -&gt; None:
+    py = int(zone_y * h)
+    cv2.line(frame, (0, py), (w, py), PRESS_LINE_COLOR, 2)
+    cv2.putText(frame, "v  Lower fingers past this line to play  v",
+                (w // 2 - 230, py - 8),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, PRESS_LINE_COLOR, 1, cv2.LINE_AA)
+
+
+def draw_piano_icon(frame: np.ndarray, x: int, y: int) -&gt; None:
+    icon_w, icon_h = 28, 18
+    # White-key body
+    cv2.rectangle(frame, (x, y), (x + icon_w, y + icon_h), (245, 245, 245), -1)
+    cv2.rectangle(frame, (x, y), (x + icon_w, y + icon_h), (30, 30, 30), 1)
+    # 4 white-key dividers
+    for i in range(1, 5):
+        wx = x + i * (icon_w // 5)
+        cv2.line(frame, (wx, y), (wx, y + icon_h), (30, 30, 30), 1)
+    # 3 black keys on the upper half
+    bw = max(2, icon_w // 8)
+    bh = (icon_h * 3) // 5
+    for i in (1, 2, 4):
+        bx = x + i * (icon_w // 5) - bw // 2
+        cv2.rectangle(frame, (bx, y), (bx + bw, y + bh), (20, 20, 20), -1)
+
+
+def draw_hud(frame: np.ndarray, h: int, w: int, zone_y: float) -&gt; None:
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (0, 0), (w, 48), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.55, frame, 0.45, 0, frame)
+    draw_piano_icon(frame, 14, 15)
+    cv2.putText(frame,
+                "Virtual Piano  |  +/- : adjust press line  |  Q : quit",
+                (52, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+    level_pct = int(
+        (zone_y - PRESS_ZONE_MIN) / (PRESS_ZONE_MAX - PRESS_ZONE_MIN) * 100
+    )
+    cv2.putText(frame,
+                f"Press sensitivity: {level_pct}%",
+                (w - 240, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 220, 255), 1, cv2.LINE_AA)
+
+
+def x_to_key(x_px: int, w: int) -&gt; str:
+    """Map fingertip x-coordinate to a key — black keys take priority."""
+    white_w = w / len(WHITE_KEYS)
+    black_half = (white_w * BLACK_KEY_WIDTH) / 2
+    for boundary_idx, sharp in BLACK_KEYS:
+        center = boundary_idx * white_w
+        if center - black_half &lt;= x_px &lt;= center + black_half:
+            return sharp
+    idx = min(int(x_px / white_w), len(WHITE_KEYS) - 1)
+    return WHITE_KEYS[idx]
+
+
+def draw_hand_skeleton(frame: np.ndarray, landmarks, w: int, h: int) -&gt; None:
+    pts = [(int(lm.x * w), int(lm.y * h)) for lm in landmarks]
+    for a, b in HAND_CONNECTIONS:
+        cv2.line(frame, pts[a], pts[b], SKELETON_BONE, 1, cv2.LINE_AA)
+    for x, y in pts:
+        cv2.circle(frame, (x, y), 3, SKELETON_JOINT, -1, cv2.LINE_AA)
+
+
+# ─── Main loop ────────────────────────────────────────────────────────────────
+def main() -&gt; None:
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(
+            f"Missing hand landmarker model at {MODEL_PATH}.\n"
+            "Download it with:\n"
+            "  curl -sSL -o hand_landmarker.task "
+            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
+            "hand_landmarker/float16/1/hand_landmarker.task"
+        )
+
+    mixer = PianoMixer()
+
+    options = mp_vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=MODEL_PATH),
+        running_mode=mp_vision.RunningMode.VIDEO,
+        num_hands=2,
+        min_hand_detection_confidence=0.5,
+        min_hand_presence_confidence=0.5,
+        min_tracking_confidence=0.5,
+    )
+    landmarker = mp_vision.HandLandmarker.create_from_options(options)
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        raise RuntimeError(
+            "Could not open the camera.\n"
+            "Check camera permissions and that no other application is using it."
+        )
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,  720)
+
+    finger_down: dict[str, bool] = {}
+    press_zone_y = PRESS_ZONE_INIT
+    start_time   = time.monotonic()
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame = cv2.flip(frame, 1)   # selfie/mirror view
+            h, w  = frame.shape[:2]
+
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            ts_ms = int((time.monotonic() - start_time) * 1000)
+            result = landmarker.detect_for_video(mp_image, ts_ms)
+
+            pressed_keys: set[str] = set()
+            press_y = int(press_zone_y * h)
+
+            if result.hand_landmarks:
+                for hand_lms, handed in zip(result.hand_landmarks, result.handedness):
+                    # Frame was mirrored, so swap mediapipe's label to match user POV
+                    raw = handed[0].category_name  # "Left" / "Right"
+                    hand_label = "Right" if raw == "Left" else "Left"
+
+                    draw_hand_skeleton(frame, hand_lms, w, h)
+
+                    for tip_id in FINGERTIP_IDS:
+                        lm     = hand_lms[tip_id]
+                        tip_x  = int(lm.x * w)
+                        tip_y  = int(lm.y * h)
+                        note   = x_to_key(tip_x, w)
+                        fkey   = f"{hand_label}_{tip_id}"
+                        is_down = tip_y &gt;= press_y
+
+                        if is_down:
+                            pressed_keys.add(note)
+                            if not finger_down.get(fkey, False):
+                                mixer.play(note)
+
+                        finger_down[fkey] = is_down
+
+                        color = TIP_DOWN_COLOR if is_down else TIP_UP_COLOR
+                        cv2.circle(frame, (tip_x, tip_y), 10, color, -1)
+                        cv2.circle(frame, (tip_x, tip_y), 10, (255, 255, 255), 1)
+
+            draw_press_line(frame, h, w, press_zone_y)
+            draw_piano(frame, h, w, pressed_keys)
+            draw_hud(frame, h, w, press_zone_y)
+
+            cv2.imshow("Virtual Piano", frame)
+
+            key = cv2.waitKey(1) &amp; 0xFF
+            if key == ord("q"):
+                break
+            elif key == ord("+") or key == ord("="):
+                press_zone_y = min(press_zone_y + PRESS_ZONE_STEP, PRESS_ZONE_MAX)
+            elif key == ord("-"):
+                press_zone_y = max(press_zone_y - PRESS_ZONE_STEP, PRESS_ZONE_MIN)
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
+        landmarker.close()
+        mixer.close()
+
+
+if __name__ == "__main__":
+    main()
+</code></pre>
+    </div>
+
+    <script>
+        (function(){
+            const visibleCodeEl = document.getElementById('visibleCode');
+            const rawCodeText = visibleCodeEl.innerText.replace(/\u00A0/g, '');
+
+            document.getElementById('copyBtn').addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(rawCodeText); alert('Code copied to clipboard'); }
+                catch(err){ alert('Copy failed: ' + err); }
+            });
+
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                const blob = new Blob([rawCodeText], { type: 'text/x-python' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'piano.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            });
+        })();
+    </script>
+  </div>
+</body>
+</html>
